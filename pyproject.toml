@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kb-qa"
-version = "0.1.0"
+version = "1.0.0"
 description = "知识库问答系统：FastAPI + 向量检索 RAG + DeepSeek"
 readme = "README.md"
 requires-python = ">=3.11"

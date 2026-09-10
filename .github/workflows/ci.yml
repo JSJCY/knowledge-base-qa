@@ -23,5 +23,5 @@ jobs:
       - name: Lint (ruff)
         run: ruff check .
 
-      - name: Test (pytest)
-        run: pytest
+      - name: Test (pytest + coverage)
+        run: pytest --cov=app --cov-report=term

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "知识库问答系统"
-    version: str = "0.1.0"
+    version: str = "1.0.0"
     debug: bool = False
 
     # 数据库
