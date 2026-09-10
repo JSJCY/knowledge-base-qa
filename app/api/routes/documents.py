@@ -7,6 +7,7 @@ from app.core.db import get_db
 from app.schemas.document import ChunkOut, DocumentListOut, DocumentOut
 from app.services import documents as document_service
 from app.services.documents import FileTooLargeError
+from app.services.embedding import EmbeddingService, get_embedding_service
 from app.services.parsing import EmptyFileError, UnsupportedFileTypeError
 
 router = APIRouter(prefix="/api/v1/documents", tags=["文档管理"])
@@ -16,15 +17,21 @@ router = APIRouter(prefix="/api/v1/documents", tags=["文档管理"])
 def upload_document(
     file: UploadFile = File(..., description="支持 .txt / .md / .pdf"),
     db: Session = Depends(get_db),
+    embedder: EmbeddingService = Depends(get_embedding_service),
 ) -> DocumentOut:
     try:
-        document = document_service.create_document_from_upload(db, file)
+        document = document_service.create_document_from_upload(db, file, embedder)
     except UnsupportedFileTypeError as exc:
         raise HTTPException(status_code=415, detail=str(exc)) from exc
     except EmptyFileError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except FileTooLargeError as exc:
         raise HTTPException(status_code=413, detail=str(exc)) from exc
+    except ValueError as exc:  # 文件解析失败（如损坏的 PDF）
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:  # 向量化失败（如模型下载失败）
+        db.rollback()
+        raise HTTPException(status_code=503, detail=f"向量化失败：{exc}") from exc
     return DocumentOut.model_validate(document)
 
 
@@ -58,3 +65,19 @@ def get_document_chunks(document_id: int, db: Session = Depends(get_db)) -> list
 def delete_document(document_id: int, db: Session = Depends(get_db)) -> None:
     if not document_service.delete_document(db, document_id):
         raise HTTPException(status_code=404, detail="文档不存在")
+
+
+@router.post("/{document_id}/reindex", response_model=DocumentOut, summary="重新向量化文档")
+def reindex_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+    embedder: EmbeddingService = Depends(get_embedding_service),
+) -> DocumentOut:
+    try:
+        document = document_service.reindex_document(db, document_id, embedder)
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=503, detail=f"向量化失败：{exc}") from exc
+    if document is None:
+        raise HTTPException(status_code=404, detail="文档不存在")
+    return DocumentOut.model_validate(document)

@@ -24,7 +24,7 @@ def test_upload_txt(client):
     body = resp.json()
     assert body["filename"] == "笔记.txt"
     assert body["extension"] == ".txt"
-    assert body["status"] == "uploaded"
+    assert body["status"] == "indexed"
     assert body["chunk_count"] >= 1
     assert body["size_bytes"] > 0
 

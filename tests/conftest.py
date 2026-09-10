@@ -14,6 +14,8 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.db import Base, get_db
 from app.main import create_app
+from app.services.embedding import get_embedding_service
+from tests.fakes import FakeEmbeddingService
 
 _TEST_UPLOAD_DIR = Path(os.environ["UPLOAD_DIR"])
 
@@ -43,11 +45,17 @@ def db_session():
 
 
 @pytest.fixture()
-def client(db_session) -> TestClient:
+def fake_embedder() -> FakeEmbeddingService:
+    return FakeEmbeddingService()
+
+
+@pytest.fixture()
+def client(db_session, fake_embedder) -> TestClient:
     application = create_app()
 
     def override_get_db():
         yield db_session
 
     application.dependency_overrides[get_db] = override_get_db
+    application.dependency_overrides[get_embedding_service] = lambda: fake_embedder
     return TestClient(application)

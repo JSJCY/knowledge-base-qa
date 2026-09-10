@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     chunk_size: int = 500
     chunk_overlap: int = 50
 
+    # 向量化（fastembed 本地推理）
+    embedding_model: str = "BAAI/bge-small-zh-v1.5"
+    hf_endpoint: str = ""  # 国内镜像加速可填 https://hf-mirror.com
+
     # DeepSeek LLM
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com"
