@@ -18,6 +18,9 @@ build/
 *.sqlite3
 data/
 
+# Vision toolkit artifacts (local only)
+.dsh-vision-toolkit/
+
 # Tooling caches
 .pytest_cache/
 .ruff_cache/

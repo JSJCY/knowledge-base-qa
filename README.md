@@ -18,6 +18,7 @@
 - 🔍 **语义检索**：余弦相似度排序，支持全库检索或限定单文档，返回相关度分数
 - 💬 **RAG 问答**：DeepSeek 严格依据检索资料作答，资料不足时诚实拒答不编造；回答自动附带引用来源（文档名 / 段落号 / 相似度）
 - 🗂 **多轮会话**：会话与消息持久化（SQLite），自动生成会话标题，追问自动携带上下文
+- 🖥 **Web 界面**：内置零依赖单页前端（问答聊天、引用来源展开、文档拖拽上传、检索面板、会话切换），启动即用
 - 🔌 **可插拔设计**：向量化与 LLM 均为依赖注入；未配置 API Key 时自动降级 Mock 模式，全流程仍可跑通
 - ✅ **工程化**：50 个 pytest 用例、92% 覆盖率、ruff 代码规范、GitHub Actions CI、Swagger 交互文档
 
@@ -76,6 +77,7 @@ HF_ENDPOINT=https://hf-mirror.com
 .venv\Scripts\uvicorn app.main:app --reload
 ```
 
+- **Web 界面**：http://127.0.0.1:8000/ （上传文档、提问、检索，开箱即用）
 - Swagger 交互文档：http://127.0.0.1:8000/docs
 - 健康检查：http://127.0.0.1:8000/health
 
@@ -105,8 +107,9 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
+| GET | `/` | Web 前端界面（单页应用） |
 | GET | `/health` | 健康检查 |
-| GET | `/` | 服务信息（版本、LLM 是否启用） |
+| GET | `/api/v1/info` | 服务信息（版本、LLM 是否启用） |
 | POST | `/api/v1/documents/upload` | 上传文档（.txt / .md / .pdf，自动解析、切块、向量化） |
 | GET | `/api/v1/documents` | 文档列表（分页） |
 | GET | `/api/v1/documents/{id}` | 文档详情 |
@@ -163,7 +166,11 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 │       ├── rag.py             # 检索→Prompt→LLM→会话持久化编排
 │       ├── documents.py       # 文档服务
 │       └── conversations.py   # 会话服务
-├── tests/                     # 50 个测试（假向量化器/假 LLM 依赖注入，CI 零外部依赖）
+├── static/                    # Web 前端（原生 HTML/CSS/JS 单页应用，零构建）
+│   ├── index.html             # 页面结构
+│   ├── style.css              # 界面样式
+│   └── app.js                 # 交互逻辑（上传/问答/检索/会话）
+├── tests/                     # 53 个测试（假向量化器/假 LLM 依赖注入，CI 零外部依赖）
 ├── .github/workflows/ci.yml   # CI：ruff lint + pytest + coverage
 ├── pyproject.toml             # 依赖与工具配置
 └── .env.example               # 配置模板
@@ -172,7 +179,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 ## 🧪 测试与质量
 
 ```bash
-pytest --cov=app        # 50 个用例，覆盖率 92%
+pytest --cov=app        # 53 个用例，覆盖率 92%
 ruff check .            # 代码规范
 ```
 
@@ -199,6 +206,7 @@ ruff check .            # 代码规范
 | 3 | 向量化与检索：embedding + 相似度搜索 | ✅ 完成 |
 | 4 | RAG 问答：DeepSeek 接入、引用来源、会话历史 | ✅ 完成 |
 | 5 | 交付收尾：文档、覆盖率、v1.0.0 发布 | ✅ 完成 |
+| 6 | Web 前端：文档管理 / 问答聊天 / 检索面板界面 | ✅ 完成 |
 
 ## 📄 License
 

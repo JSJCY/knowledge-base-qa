@@ -8,7 +8,7 @@ def test_health(client: TestClient) -> None:
 
 
 def test_service_info(client: TestClient) -> None:
-    resp = client.get("/")
+    resp = client.get("/api/v1/info")
     assert resp.status_code == 200
     body = resp.json()
     assert body["name"]

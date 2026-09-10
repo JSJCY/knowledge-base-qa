@@ -12,7 +12,7 @@ def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@router.get("/", summary="服务信息")
+@router.get("/api/v1/info", summary="服务信息")
 def service_info() -> dict[str, object]:
     settings = get_settings()
     return {

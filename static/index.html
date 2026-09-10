@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>知识库问答系统</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">📚</span> 知识库问答系统</div>
+    <div class="topbar-right">
+      <span id="llm-badge" class="badge">连接中…</span>
+      <span id="version-badge" class="badge ghost"></span>
+      <a class="badge ghost link" href="/docs" target="_blank" rel="noopener">API 文档</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <section class="side-block">
+        <button id="btn-new-chat" class="btn primary block">＋ 新建会话</button>
+      </section>
+
+      <section class="side-block">
+        <h2 class="side-title">知识库文档</h2>
+        <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="上传文档">
+          <input type="file" id="file-input" accept=".txt,.md,.pdf" hidden>
+          <div class="drop-icon">📄</div>
+          <p>点击选择 或 拖拽文件到此处</p>
+          <small>支持 .txt / .md / .pdf，上传后自动向量化</small>
+        </div>
+        <div id="upload-progress" class="upload-progress hidden">
+          <span class="spinner"></span><span id="upload-text">上传中…</span>
+        </div>
+        <ul id="doc-list" class="doc-list"></ul>
+      </section>
+
+      <section class="side-block grow">
+        <h2 class="side-title">历史会话</h2>
+        <ul id="conv-list" class="conv-list"></ul>
+      </section>
+    </aside>
+
+    <main class="main">
+      <nav class="tabs">
+        <button class="tab active" data-tab="chat">💬 问答</button>
+        <button class="tab" data-tab="search">🔍 检索</button>
+      </nav>
+
+      <section id="tab-chat" class="tab-panel active">
+        <div id="chat-messages" class="messages">
+          <div class="empty-hint" id="chat-empty">
+            <div class="empty-icon">📚</div>
+            <p>先在左侧上传文档，然后开始提问吧</p>
+            <p class="sub">回答会附带知识库引用来源；知识库中找不到时会如实告知</p>
+          </div>
+        </div>
+        <div class="composer">
+          <textarea id="chat-input" rows="1" placeholder="输入问题，Enter 发送，Shift+Enter 换行…"></textarea>
+          <button id="btn-send" class="btn primary send">发送 ➤</button>
+        </div>
+      </section>
+
+      <section id="tab-search" class="tab-panel">
+        <div class="search-bar">
+          <input id="search-input" type="text" placeholder="输入要检索的内容，直接命中知识库片段…">
+          <select id="search-doc" title="限定文档范围">
+            <option value="">全部文档</option>
+          </select>
+          <select id="search-topk" title="返回数量">
+            <option value="3">Top 3</option>
+            <option value="5" selected>Top 5</option>
+            <option value="10">Top 10</option>
+          </select>
+          <button id="btn-search" class="btn primary">检索</button>
+        </div>
+        <div id="search-results" class="search-results">
+          <div class="empty-hint">
+            <div class="empty-icon">🔍</div>
+            <p>纯向量检索面板：不经过大模型，直接查看知识库中最相关的原文片段与相似度分数</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
