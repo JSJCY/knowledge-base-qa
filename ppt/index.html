@@ -1558,31 +1558,31 @@ const SPEAKER_NOTES = [
     transition: '先说为什么要做这个东西', cue: '停顿,确认观众屏已同步'
   },
   {
-    id: 'problem', title: '文档越堆越多,答案越找越少', section: '问题', minutes: 1.2,
+    id: 'problem', title: '文档越堆越多,答案越找越少', section: '问题', minutes: 1.1,
     purpose: '用反差陈述建立共鸣:知识散落、检索原始',
     talk: ['团队文档散落在 txt、md、pdf 里,越攒越多', '找信息靠 Ctrl+F 和问老同事,新人上手成本极高', '关键词搜索不懂语义:搜「提神饮品」找不到咖啡手册', '所以要做的不是又一个网盘,而是能回答、可溯源的知识库'],
     transition: '这套系统怎么工作?看五步流程', cue: '念完宣言停一拍再翻页'
   },
   {
-    id: 'pipeline', title: '五步,从文件到答案', section: '方案 · 流程', minutes: 2,
+    id: 'pipeline', title: '五步,从文件到答案', section: '方案 · 流程', minutes: 1.8,
     purpose: '讲清 RAG 主链路:入库即索引,提问即检索,回答即引用',
     talk: ['前三步是入库:上传、段落感知切块(500 字/重叠 50)、本地向量化', '向量化用 BGE-small-zh,ONNX 离线推理,零 API 成本', '第四步语义检索:问题向量化后余弦相似度取 Top-K', '第五步生成:DeepSeek 只依据召回资料作答,逐条附引用'],
     transition: '流程背后是三层架构', cue: '手势沿时间轴从左到右走一遍'
   },
   {
-    id: 'architecture', title: '小而完整的 RAG 系统', section: '方案 · 架构', minutes: 1.8,
+    id: 'architecture', title: '小而完整的 RAG 系统', section: '方案 · 架构', minutes: 1.6,
     purpose: '三层拆解技术选型,强调检索层是系统心脏',
     talk: ['文档层:FastAPI + SQLite 单文件,双编码兜底解析,pypdf 读 PDF', '检索层是核心:fastembed 本地向量化,L2 归一化后点积即余弦', '生成层:编号资料 + 多轮历史注入提示词,硬约束仅依据资料回答', '全链路依赖注入可插拔:没有 API Key 自动降级 Mock,照样跑通'],
     transition: '架构说完了,看真实运行数据', cue: '指蓝色检索层块强调这是心脏'
   },
   {
-    id: 'proof', title: '数字都来自真实运行', section: '交付数据', minutes: 1.5,
+    id: 'proof', title: '数字都来自真实运行', section: '交付数据', minutes: 1.4,
     purpose: '用可复核的实测数据建立可信度',
     talk: ['53 个自动化测试全绿,CI 零外部依赖', '覆盖率 92%,检索等核心服务达 100%', '真实向量模型实测:相关问题 0.83 分,不相关只有 0.19 分', '13 个 API 端点,全部有 Swagger 交互文档'],
     transition: '数据之外,还有四个设计出来的特性', cue: '强调每个数字都可本地复现'
   },
   {
-    id: 'features', title: '可信,是设计出来的', section: '核心特性', minutes: 1.8,
+    id: 'features', title: '可信,是设计出来的', section: '核心特性', minutes: 1.6,
     purpose: '四个等权特性收拢产品价值',
     talk: ['诚实拒答:知识库外的问题实测回答「未找到相关信息」,不编造', '引用溯源:每条回答带文档、段落号、相似度分,可展开原文核对', '多轮上下文:追问「那它呢」能正确理解指代', '零负担部署:零构建 Web 界面,uvicorn 一条命令上线'],
     transition: '最后收个尾', cue: '四条依次点过去,节奏均匀'
