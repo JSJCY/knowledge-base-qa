@@ -19,8 +19,8 @@
 | 1 | 项目骨架：配置管理、健康检查、测试与 CI | ✅ 完成 |
 | 2 | 文档管理：上传 / 解析 / 切块 / 存储 | ✅ 完成 |
 | 3 | 向量化与检索：embedding + 相似度搜索 | ✅ 完成 |
-| 4 | RAG 问答：DeepSeek 接入、引用来源、会话历史 | 🚧 进行中 |
-| 5 | 交付收尾：文档、覆盖率、v1.0.0 发布 | ⬜ 未开始 |
+| 4 | RAG 问答：DeepSeek 接入、引用来源、会话历史 | ✅ 完成 |
+| 5 | 交付收尾：文档、覆盖率、v1.0.0 发布 | 🚧 进行中 |
 
 ## API 一览
 
@@ -35,6 +35,27 @@
 | DELETE | `/api/v1/documents/{id}` | 删除文档及其切块 |
 | POST | `/api/v1/documents/{id}/reindex` | 重新向量化文档 |
 | POST | `/api/v1/search` | 向量检索（余弦相似度排序，返回最相关切块） |
+| POST | `/api/v1/chat` | 知识库问答（RAG：检索 + DeepSeek 生成，带引用来源，支持多轮会话） |
+| GET | `/api/v1/conversations` | 会话列表 |
+| GET | `/api/v1/conversations/{id}` | 会话详情（含消息与引用） |
+| DELETE | `/api/v1/conversations/{id}` | 删除会话 |
+
+### 问答示例
+
+```bash
+# 上传文档（自动解析、切块、向量化）
+curl -X POST http://127.0.0.1:8000/api/v1/documents/upload -F "file=@产品手册.pdf"
+
+# 提问（返回答案 + 引用来源 + 会话 ID）
+curl -X POST http://127.0.0.1:8000/api/v1/chat ^
+  -H "Content-Type: application/json" ^
+  -d "{\"question\": \"这个产品怎么初始化？\", \"top_k\": 5}"
+
+# 携带 conversation_id 继续追问（多轮上下文）
+curl -X POST http://127.0.0.1:8000/api/v1/chat ^
+  -H "Content-Type: application/json" ^
+  -d "{\"question\": \"那它支持哪些配置项？\", \"conversation_id\": 1}"
+```
 
 > 首次上传/检索会自动下载本地向量模型（`BAAI/bge-small-zh-v1.5`，约 100MB，实测约 1 分钟），之后全部走本地缓存，无需联网。国内网络建议在 `.env` 中设置 `HF_ENDPOINT=https://hf-mirror.com`。
 

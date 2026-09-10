@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-chat"
     llm_timeout_seconds: float = 60.0
+    llm_temperature: float = 0.3
+
+    # RAG 问答
+    rag_history_limit: int = 10
 
     @property
     def llm_enabled(self) -> bool:

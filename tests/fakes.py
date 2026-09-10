@@ -27,3 +27,19 @@ class FakeEmbeddingService:
                 vec /= norm
             vectors.append(vec.tolist())
         return vectors
+
+
+class FakeLLMService:
+    """确定性假 LLM：记录收到的完整 messages，返回可断言的固定回答。"""
+
+    mode = "fake"
+
+    def __init__(self) -> None:
+        self.last_messages: list[dict[str, str]] | None = None
+
+    def chat(self, messages: list[dict[str, str]]) -> str:
+        self.last_messages = list(messages)
+        last_user = next(
+            (m["content"] for m in reversed(messages) if m["role"] == "user"), ""
+        )
+        return f"fake-answer::{last_user[:30]}"
