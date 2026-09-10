@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     # 数据库
     database_url: str = "sqlite:///./kb.db"
 
+    # 文档处理
+    upload_dir: str = "data/uploads"
+    max_upload_mb: int = 20
+    chunk_size: int = 500
+    chunk_overlap: int = 50
+
     # DeepSeek LLM
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com"
