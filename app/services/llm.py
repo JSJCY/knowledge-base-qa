@@ -5,6 +5,8 @@
 - 测试通过依赖注入替换，不产生真实调用。
 """
 
+import json
+from collections.abc import Iterator
 from typing import Protocol
 
 import httpx
@@ -21,6 +23,8 @@ class LLMService(Protocol):
 
     def chat(self, messages: list[dict[str, str]]) -> str: ...
 
+    def stream_chat(self, messages: list[dict[str, str]]) -> Iterator[str]: ...
+
 
 class MockLLMService:
     """未配置 DEEPSEEK_API_KEY 时的占位实现。"""
@@ -35,6 +39,11 @@ class MockLLMService:
             "【Mock 模式】未配置 DEEPSEEK_API_KEY，无法调用真实大模型。"
             f"已收到问题：{last_user[:100]}"
         )
+
+    def stream_chat(self, messages: list[dict[str, str]]) -> Iterator[str]:
+        answer = self.chat(messages)
+        for i in range(0, len(answer), 12):
+            yield answer[i : i + 12]
 
 
 class DeepSeekLLMService:
@@ -80,6 +89,37 @@ class DeepSeekLLMService:
             return data["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
             raise LLMError(f"DeepSeek 响应格式异常：{data}") from exc
+
+    def stream_chat(self, messages: list[dict[str, str]]) -> Iterator[str]:
+        try:
+            with self._client.stream(
+                "POST",
+                "/chat/completions",
+                json={
+                    "model": self.model,
+                    "messages": messages,
+                    "temperature": self.temperature,
+                    "stream": True,
+                },
+            ) as resp:
+                if resp.status_code != 200:
+                    detail = resp.read().decode()[:200]
+                    raise LLMError(f"DeepSeek API 返回 {resp.status_code}：{detail}")
+                for line in resp.iter_lines():
+                    if not line or not line.startswith("data:"):
+                        continue
+                    data = line[5:].strip()
+                    if data == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data)
+                        delta = chunk["choices"][0].get("delta", {}).get("content")
+                    except (ValueError, KeyError, IndexError, TypeError) as exc:
+                        raise LLMError(f"DeepSeek 流式响应格式异常：{data[:200]}") from exc
+                    if delta:
+                        yield delta
+        except httpx.HTTPError as exc:
+            raise LLMError(f"请求 DeepSeek 失败：{exc}") from exc
 
 
 _llm_service: LLMService | None = None

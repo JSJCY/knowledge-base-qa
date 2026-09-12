@@ -292,6 +292,17 @@ body {
   border-bottom-left-radius: 5px;
 }
 .msg.assistant .bubble.error { background: var(--red-bg); border-color: #f3c1c1; color: var(--red); }
+.msg.assistant .bubble h1, .msg.assistant .bubble h2, .msg.assistant .bubble h3,
+.msg.assistant .bubble h4, .msg.assistant .bubble h5, .msg.assistant .bubble h6 { margin: 0 0 8px; line-height: 1.35; }
+.msg.assistant .bubble p { margin: 0 0 9px; }
+.msg.assistant .bubble p:last-child { margin-bottom: 0; }
+.msg.assistant .bubble ul { padding-left: 22px; margin: 4px 0 9px; }
+.msg.assistant .bubble blockquote { border-left: 3px solid var(--primary); padding-left: 10px; color: var(--muted); margin: 6px 0; }
+.msg.assistant .bubble code { background: #f0f2f7; border-radius: 4px; padding: 1px 5px; font-family: Consolas, monospace; font-size: 0.9em; }
+.msg.assistant .bubble pre { background: #1f2937; color: #f8fafc; border-radius: 8px; padding: 11px; overflow-x: auto; margin: 8px 0; }
+.msg.assistant .bubble pre code { background: transparent; padding: 0; color: inherit; }
+.msg.assistant .bubble a { color: var(--primary-dark); text-decoration: underline; }
+.msg.assistant.streaming .bubble { border-color: #a9bdf5; }
 
 /* 引用来源 */
 .cites { margin-top: 8px; width: 100%; }

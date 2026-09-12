@@ -1,6 +1,10 @@
 """问答与会话路由：RAG 问答 / 会话列表 / 会话详情 / 删除会话。"""
 
+import json
+from collections.abc import Iterator
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -67,6 +71,41 @@ def chat(
         citations=citations,
         llm_mode=getattr(llm, "mode", "unknown"),
     )
+
+
+@router.post("/chat/stream", summary="知识库问答（SSE 流式）")
+def chat_stream(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+    embedder: EmbeddingService = Depends(get_embedding_service),
+    llm: LLMService = Depends(get_llm_service),
+) -> StreamingResponse:
+    settings = get_settings()
+
+    def events() -> Iterator[str]:
+        try:
+            preparation = None
+            for part, _preparation in rag_service.stream_answer_question(
+                db, embedder, llm, question=request.question, top_k=request.top_k,
+                conversation_id=request.conversation_id, history_limit=settings.rag_history_limit,
+            ):
+                preparation = _preparation
+                yield f"event: delta\ndata: {json.dumps({'content': part}, ensure_ascii=False)}\n\n"
+            assert preparation is not None
+            payload = {"conversation_id": preparation.conversation.id,
+                       "citations": rag_service.citation_dicts(preparation.citations),
+                       "llm_mode": getattr(llm, "mode", "unknown")}
+            yield f"event: done\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+        except ConversationNotFoundError as exc:
+            db.rollback()
+            yield f"event: error\ndata: {json.dumps({'detail': str(exc)}, ensure_ascii=False)}\n\n"
+        except Exception as exc:
+            db.rollback()
+            detail = json.dumps({"detail": f"问答失败：{exc}"}, ensure_ascii=False)
+            yield f"event: error\ndata: {detail}\n\n"
+
+    return StreamingResponse(events(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @router.get("/conversations", response_model=list[ConversationOut], summary="会话列表")

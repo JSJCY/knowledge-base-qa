@@ -25,6 +25,19 @@ def test_chat_returns_answer_with_citations(client):
     assert top["score"] > 0
 
 
+def test_chat_stream_returns_sse_and_persists_answer(client):
+    _upload_kb(client)
+    resp = client.post("/api/v1/chat/stream", json={"question": "流式回答是什么？"})
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/event-stream")
+    assert "event: delta" in resp.text
+    assert "event: done" in resp.text
+    assert '"conversation_id"' in resp.text
+
+    conversations = client.get("/api/v1/conversations").json()
+    assert conversations[0]["message_count"] == 2
+
+
 def test_chat_system_prompt_contains_retrieved_context(client, fake_llm):
     _upload_kb(client)
     client.post("/api/v1/chat", json={"question": "FastAPI 能做什么？"})

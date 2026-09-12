@@ -37,6 +37,33 @@ function escapeHtml(s) {
     .replace(/'/g, "&#39;");
 }
 
+// 轻量 Markdown 渲染器：先完整转义，再处理常用语法，避免模型输出被当作 HTML 执行。
+function renderMarkdown(source) {
+  let text = escapeHtml(source || "").replace(/\r\n?/g, "\n");
+  const codeBlocks = [];
+  text = text.replace(/```(?:[\w+-]+)?\n?([\s\S]*?)```/g, (_, code) => {
+    codeBlocks.push('<pre><code>' + code.trimEnd() + '</code></pre>');
+    return "\n@@CODE" + (codeBlocks.length - 1) + "@@\n";
+  });
+  text = text.replace(/^###### (.*)$/gm, "<h6>$1</h6>")
+    .replace(/^##### (.*)$/gm, "<h5>$1</h5>")
+    .replace(/^#### (.*)$/gm, "<h4>$1</h4>")
+    .replace(/^### (.*)$/gm, "<h3>$1</h3>")
+    .replace(/^## (.*)$/gm, "<h2>$1</h2>")
+    .replace(/^# (.*)$/gm, "<h1>$1</h1>")
+    .replace(/^> (.*)$/gm, "<blockquote>$1</blockquote>")
+    .replace(/^[-*] (.*)$/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>\n?)+/g, (list) => "<ul>" + list + "</ul>")
+    .replace(/`([^`\n]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/__([^_\n]+)__/g, "<strong>$1</strong>")
+    .replace(/\*([^*\n]+)\*/g, "<em>$1</em>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  text = text.split(/\n{2,}/).map((block) => /^<(h[1-6]|ul|pre|blockquote)/.test(block.trim())
+    ? block : "<p>" + block.replace(/\n/g, "<br>") + "</p>").join("");
+  return text.replace(/@@CODE(\d+)@@/g, (_, i) => codeBlocks[Number(i)]);
+}
+
 function formatSize(bytes) {
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
@@ -303,7 +330,7 @@ function appendMessage(role, content, citations) {
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.textContent = content;
+  bubble.innerHTML = role === "assistant" ? renderMarkdown(content) : escapeHtml(content).replace(/\n/g, "<br>");
   wrap.appendChild(bubble);
 
   if (role === "assistant" && citations) {
@@ -333,6 +360,38 @@ function appendMessage(role, content, citations) {
   box.appendChild(wrap);
   box.scrollTop = box.scrollHeight;
   return wrap;
+}
+
+function appendStreamingMessage() {
+  const wrap = appendMessage("assistant", "", null);
+  wrap.classList.add("streaming");
+  return { wrap, bubble: wrap.querySelector(".bubble") };
+}
+
+async function streamQuestion(path, payload, onDelta, onDone) {
+  const resp = await fetch(path, {
+    method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+    body: JSON.stringify(payload),
+  });
+  if (!resp.ok) throw new Error("请求失败（HTTP " + resp.status + "）");
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+    const events = buffer.split("\n\n");
+    buffer = events.pop();
+    for (const raw of events) {
+      const event = raw.match(/^event: (.+)\ndata: (.+)$/s);
+      if (!event) continue;
+      const data = JSON.parse(event[2]);
+      if (event[1] === "delta") onDelta(data.content || "");
+      if (event[1] === "done") onDone(data);
+      if (event[1] === "error") throw new Error(data.detail || "流式问答失败");
+    }
+    if (done) break;
+  }
 }
 
 function appendErrorMessage(msg) {
@@ -376,10 +435,18 @@ async function sendQuestion() {
   try {
     const payload = { question: question, top_k: 5 };
     if (state.conversationId != null) payload.conversation_id = state.conversationId;
-    const r = await postJson("/api/v1/chat", payload);
     hideTyping();
-    state.conversationId = r.conversation_id;
-    appendMessage("assistant", r.answer, r.citations);
+    const streamed = appendStreamingMessage();
+    let answer = "";
+    const r = await streamQuestion("/api/v1/chat/stream", payload, (part) => {
+      answer += part;
+      streamed.bubble.innerHTML = renderMarkdown(answer);
+      $("#chat-messages").scrollTop = $("#chat-messages").scrollHeight;
+    }, (data) => {
+      state.conversationId = data.conversation_id;
+      const finalWrap = appendMessage("assistant", answer, data.citations || []);
+      streamed.wrap.replaceWith(finalWrap);
+    });
     loadConversations();
   } catch (e) {
     hideTyping();

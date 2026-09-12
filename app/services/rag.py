@@ -1,5 +1,6 @@
 """RAG 问答编排：检索 → 组装提示词 → 调用 LLM → 持久化会话。"""
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -29,6 +30,46 @@ class QAResult:
     answer: str
     citations: list[RetrievedChunk]
     conversation: Conversation
+
+
+@dataclass
+class QAPreparation:
+    messages: list[dict[str, str]]
+    citations: list[RetrievedChunk]
+    conversation: Conversation
+
+
+def prepare_question(
+    db: Session, embedder: EmbeddingService, *, question: str, top_k: int,
+    conversation_id: int | None, history_limit: int,
+) -> QAPreparation:
+    query_vector = embedder.embed([question])[0]
+    results = search_chunks(db, query_vector, top_k=top_k)
+    if conversation_id is not None:
+        conversation = db.get(Conversation, conversation_id)
+        if conversation is None:
+            raise ConversationNotFoundError(f"会话不存在：{conversation_id}")
+    else:
+        conversation = Conversation(title=question[:50])
+        db.add(conversation)
+        db.flush()
+    history = list(db.scalars(
+        select(Message).where(Message.conversation_id == conversation.id)
+        .order_by(Message.id.desc()).limit(history_limit)
+    ))[::-1]
+    system_content = SYSTEM_PROMPT_TEMPLATE.format(context=build_context(results))
+    messages = [{"role": "system", "content": system_content}]
+    messages.extend({"role": m.role, "content": m.content} for m in history)
+    messages.append({"role": "user", "content": question})
+    return QAPreparation(messages, results, conversation)
+
+
+def persist_answer(db: Session, preparation: QAPreparation, question: str, answer: str) -> None:
+    db.add(Message(conversation_id=preparation.conversation.id, role="user", content=question))
+    db.add(Message(conversation_id=preparation.conversation.id, role="assistant", content=answer,
+                   citations=citation_dicts(preparation.citations)))
+    db.commit()
+    db.refresh(preparation.conversation)
 
 
 def build_context(results: list[RetrievedChunk]) -> str:
@@ -65,43 +106,39 @@ def answer_question(
     history_limit: int = 10,
 ) -> QAResult:
     """执行一次 RAG 问答并把问答对写入会话。"""
-    query_vector = embedder.embed([question])[0]
-    results = search_chunks(db, query_vector, top_k=top_k)
-
-    if conversation_id is not None:
-        conversation = db.get(Conversation, conversation_id)
-        if conversation is None:
-            raise ConversationNotFoundError(f"会话不存在：{conversation_id}")
-    else:
-        conversation = Conversation(title=question[:50])
-        db.add(conversation)
-        db.flush()
-
-    history = list(
-        db.scalars(
-            select(Message)
-            .where(Message.conversation_id == conversation.id)
-            .order_by(Message.id.desc())
-            .limit(history_limit)
-        )
-    )[::-1]
-
-    system_content = SYSTEM_PROMPT_TEMPLATE.format(context=build_context(results))
-    messages: list[dict[str, str]] = [{"role": "system", "content": system_content}]
-    messages.extend({"role": m.role, "content": m.content} for m in history)
-    messages.append({"role": "user", "content": question})
-
-    answer = llm.chat(messages)  # 可能抛 LLMError，由路由层转 502
-
-    db.add(Message(conversation_id=conversation.id, role="user", content=question))
-    db.add(
-        Message(
-            conversation_id=conversation.id,
-            role="assistant",
-            content=answer,
-            citations=citation_dicts(results),
-        )
+    preparation = prepare_question(db, embedder, question=question, top_k=top_k,
+                                   conversation_id=conversation_id, history_limit=history_limit)
+    answer = llm.chat(preparation.messages)
+    persist_answer(db, preparation, question, answer)
+    return QAResult(
+        answer=answer,
+        citations=preparation.citations,
+        conversation=preparation.conversation,
     )
-    db.commit()
-    db.refresh(conversation)
-    return QAResult(answer=answer, citations=results, conversation=conversation)
+
+
+def stream_answer_question(
+    db: Session, embedder: EmbeddingService, llm: LLMService, **kwargs
+) -> Iterator[tuple[str, QAPreparation]]:
+    preparation = prepare_question(
+        db,
+        embedder,
+        **{k: kwargs[k] for k in ("question", "top_k", "conversation_id", "history_limit")},
+    )
+    answer_parts: list[str] = []
+    try:
+        stream_chat = getattr(llm, "stream_chat", None)
+        parts = (
+            stream_chat(preparation.messages)
+            if stream_chat
+            else iter([llm.chat(preparation.messages)])
+        )
+        for part in parts:
+            answer_parts.append(part)
+            yield part, preparation
+        if not answer_parts:
+            yield "", preparation
+    except Exception:
+        db.rollback()
+        raise
+    persist_answer(db, preparation, kwargs["question"], "".join(answer_parts))
