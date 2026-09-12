@@ -54,6 +54,14 @@ def test_upload_unsupported_type(client):
     assert resp.status_code == 415
 
 
+def test_async_upload_rejects_unsupported_type(client):
+    resp = client.post(
+        "/api/v1/documents/upload/async",
+        files={"file": ("virus.exe", b"MZ...", "application/octet-stream")},
+    )
+    assert resp.status_code == 415
+
+
 def test_upload_empty_file(client):
     resp = _upload(client, "empty.txt", b"")
     assert resp.status_code == 422

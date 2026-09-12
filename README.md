@@ -19,6 +19,7 @@
 - 💬 **RAG 问答**：支持低相关拒答、上下文压缩与可选查询改写；回答自动附带引用来源（文档名 / 段落号 / 相似度）
 - 🗂 **多轮会话**：会话与消息持久化（SQLite），自动生成会话标题，追问自动携带上下文
 - 🖥 **Web 界面**：内置零依赖单页前端，支持流式回答、Markdown（表格 / 公式 / 代码块高亮与复制）、引用来源定位、文档拖拽上传与会话切换
+- ⚙️ **工程化运行**：文档可异步入队处理并查询进度；统一错误格式、请求 ID、可选 API Key 与限流；提供 Docker Compose + Nginx 部署配置
 - 🔌 **可插拔设计**：向量化与 LLM 均为依赖注入；未配置 API Key 时自动降级 Mock 模式，全流程仍可跑通
 - ✅ **工程化**：50 个 pytest 用例、92% 覆盖率、ruff 代码规范、GitHub Actions CI、Swagger 交互文档
 
@@ -111,6 +112,8 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 | GET | `/health` | 健康检查 |
 | GET | `/api/v1/info` | 服务信息（版本、LLM 是否启用） |
 | POST | `/api/v1/documents/upload` | 上传文档（.txt / .md / .pdf，自动解析、切块、向量化） |
+| POST | `/api/v1/documents/upload/async` | 异步上传与索引，返回任务 ID |
+| GET | `/api/v1/documents/tasks/{task_id}` | 查询后台任务进度与错误信息 |
 | GET | `/api/v1/documents` | 文档列表（分页） |
 | GET | `/api/v1/documents/{id}` | 文档详情 |
 | GET | `/api/v1/documents/{id}/chunks` | 文档切块列表 |
@@ -144,6 +147,8 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 | `CHUNK_SIZE` | `500` | 切块目标长度（字符） |
 | `CHUNK_OVERLAP` | `50` | 相邻切块重叠长度（字符） |
 | `DEBUG` | `false` | FastAPI 调试模式 |
+| `API_KEY` | 空 | 配置后 `/api/v1/*` 请求需携带 `X-API-Key` |
+| `RATE_LIMIT_PER_MINUTE` | `120` | 单 IP 每分钟 API 请求上限 |
 
 ## 📁 项目结构
 

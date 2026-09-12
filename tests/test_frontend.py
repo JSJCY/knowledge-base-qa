@@ -21,3 +21,12 @@ def test_api_routes_take_priority_over_static(client: TestClient) -> None:
     assert client.get("/health").json() == {"status": "ok"}
     assert client.get("/api/v1/info").status_code == 200
     assert client.get("/api/v1/documents").status_code == 200
+
+
+def test_api_errors_have_consistent_shape_and_request_id(client: TestClient) -> None:
+    resp = client.get("/api/v1/documents/99999")
+    assert resp.status_code == 404
+    assert resp.headers["x-request-id"]
+    error = resp.json()["error"]
+    assert error["code"] == "404"
+    assert error["request_id"] == resp.headers["x-request-id"]

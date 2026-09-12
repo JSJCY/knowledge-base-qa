@@ -11,7 +11,7 @@ from app.core.config import get_settings
 from app.models.document import Chunk, Document
 from app.services.chunking import split_text
 from app.services.embedding import EmbeddingService, vec_to_bytes
-from app.services.parsing import parse_bytes
+from app.services.parsing import SUPPORTED_EXTENSIONS, parse_bytes
 
 
 class FileTooLargeError(ValueError):
@@ -56,6 +56,64 @@ def create_document_from_upload(
                 embedding=vec_to_bytes(vector),
             )
         )
+    db.commit()
+    db.refresh(document)
+    return document
+
+
+def create_pending_document(db: Session, upload: UploadFile) -> Document:
+    """快速保存原文件并创建待处理记录，解析与向量化交给后台任务。"""
+    settings = get_settings()
+    filename = upload.filename or "unnamed"
+    extension = Path(filename).suffix.lower()
+    data = upload.file.read()
+    if extension not in SUPPORTED_EXTENSIONS:
+        from app.services.parsing import UnsupportedFileTypeError
+
+        raise UnsupportedFileTypeError(extension)
+    if not data:
+        from app.services.parsing import EmptyFileError
+
+        raise EmptyFileError("文件内容为空")
+    if len(data) > settings.max_upload_mb * 1024 * 1024:
+        raise FileTooLargeError(settings.max_upload_mb)
+    storage_path = _store_original(Path(settings.upload_dir), extension, data)
+    document = Document(
+        filename=filename,
+        extension=extension,
+        size_bytes=len(data),
+        storage_path=str(storage_path),
+        status="queued",
+    )
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+    return document
+
+
+def index_pending_document(db: Session, document_id: int, embedder: EmbeddingService) -> Document:
+    """处理待索引文档；仅供后台工作线程使用。"""
+    document = db.get(Document, document_id)
+    if document is None or not document.storage_path:
+        raise ValueError("待处理文档不存在或原文件缺失")
+    document.status = "indexing"
+    db.commit()
+    data = Path(document.storage_path).read_bytes()
+    text = parse_bytes(data, document.extension)
+    chunk_texts = split_text(text, get_settings().chunk_size, get_settings().chunk_overlap)
+    embeddings = embedder.embed(chunk_texts)
+    db.query(Chunk).filter_by(document_id=document.id).delete()
+    for index, (content, vector) in enumerate(zip(chunk_texts, embeddings, strict=True)):
+        db.add(
+            Chunk(
+                document_id=document.id,
+                chunk_index=index,
+                content=content,
+                embedding=vec_to_bytes(vector),
+            )
+        )
+    document.chunk_count = len(chunk_texts)
+    document.status = "indexed"
     db.commit()
     db.refresh(document)
     return document

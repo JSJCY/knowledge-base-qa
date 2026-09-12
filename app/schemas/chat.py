@@ -6,6 +6,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ChatRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [{"question": "如何启动这个项目？", "top_k": 5}]}
+    )
+
     question: str = Field(min_length=1, max_length=2000, description="你的问题")
     top_k: int = Field(5, ge=1, le=20, description="检索的最相关片段数量")
     conversation_id: int | None = Field(None, description="传入已有会话 ID 可携带上下文继续提问")

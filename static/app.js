@@ -12,7 +12,9 @@ async function api(path, options) {
   const body = isJson ? await resp.json() : await resp.text();
   if (!resp.ok) {
     let detail = "请求失败（HTTP " + resp.status + "）";
-    if (body && typeof body === "object" && body.detail) {
+    if (body && typeof body === "object" && body.error) {
+      detail = body.error.message || JSON.stringify(body.error);
+    } else if (body && typeof body === "object" && body.detail) {
       detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
     }
     throw new Error(detail);
@@ -231,7 +233,8 @@ function renderDocuments() {
 async function reindexDocument(doc) {
   toast("正在重新向量化：" + doc.filename + " …");
   try {
-    await api("/api/v1/documents/" + doc.id + "/reindex", { method: "POST" });
+    const task = await api("/api/v1/documents/" + doc.id + "/reindex/async", { method: "POST" });
+    await waitForTask(task, "正在重新向量化");
     toast("已重建索引：" + doc.filename);
     loadDocuments();
   } catch (e) {
@@ -289,7 +292,9 @@ async function uploadFile(file) {
   try {
     const form = new FormData();
     form.append("file", file);
-    const doc = await api("/api/v1/documents/upload", { method: "POST", body: form });
+    const task = await api("/api/v1/documents/upload/async", { method: "POST", body: form });
+    const completed = await waitForTask(task, "正在解析并向量化");
+    const doc = await api("/api/v1/documents/" + completed.document_id);
     toast('已入库「' + doc.filename + '」，共 ' + doc.chunk_count + " 个切块");
     await loadDocuments();
   } catch (e) {
@@ -297,6 +302,17 @@ async function uploadFile(file) {
   } finally {
     progress.classList.add("hidden");
   }
+}
+
+async function waitForTask(task, label) {
+  for (let attempt = 0; attempt < 150; attempt += 1) {
+    const current = await api("/api/v1/documents/tasks/" + task.id);
+    if (current.status === "completed") return current;
+    if (current.status === "failed") throw new Error(current.error || "后台任务失败");
+    $("#upload-text").textContent = label + "（" + current.progress + "%）…";
+    await new Promise((resolve) => setTimeout(resolve, 800));
+  }
+  throw new Error("后台任务处理超时，请稍后在文档列表查看状态");
 }
 
 /* ================= 会话管理 ================= */

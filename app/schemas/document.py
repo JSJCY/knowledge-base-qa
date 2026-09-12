@@ -29,3 +29,16 @@ class DocumentOut(BaseModel):
 class DocumentListOut(BaseModel):
     total: int
     items: list[DocumentOut]
+
+
+class ProcessingTaskOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    kind: str
+    status: str
+    document_id: int | None
+    progress: int
+    error: str | None
+    created_at: datetime
+    updated_at: datetime

@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.schemas.document import ChunkOut, DocumentListOut, DocumentOut
+from app.schemas.document import ChunkOut, DocumentListOut, DocumentOut, ProcessingTaskOut
 from app.services import documents as document_service
+from app.services import tasks as task_service
 from app.services.documents import FileTooLargeError
 from app.services.embedding import EmbeddingService, get_embedding_service
 from app.services.parsing import EmptyFileError, UnsupportedFileTypeError
@@ -35,6 +36,29 @@ def upload_document(
     return DocumentOut.model_validate(document)
 
 
+@router.post(
+    "/upload/async",
+    response_model=ProcessingTaskOut,
+    status_code=202,
+    summary="异步上传并建立索引",
+)
+def upload_document_async(
+    file: UploadFile = File(..., description="支持 .txt / .md / .pdf"),
+    db: Session = Depends(get_db),
+) -> ProcessingTaskOut:
+    try:
+        document = document_service.create_pending_document(db, file)
+    except UnsupportedFileTypeError as exc:
+        raise HTTPException(status_code=415, detail=str(exc)) from exc
+    except EmptyFileError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except FileTooLargeError as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
+    task = task_service.create_task(db, kind="index", document_id=document.id)
+    task_service.enqueue(task.id)
+    return ProcessingTaskOut.model_validate(task)
+
+
 @router.get("", response_model=DocumentListOut, summary="文档列表")
 def list_documents(
     skip: int = Query(0, ge=0),
@@ -43,6 +67,14 @@ def list_documents(
 ) -> DocumentListOut:
     total, items = document_service.list_documents(db, skip=skip, limit=limit)
     return DocumentListOut(total=total, items=[DocumentOut.model_validate(d) for d in items])
+
+
+@router.get("/tasks/{task_id}", response_model=ProcessingTaskOut, summary="查看后台任务状态")
+def get_processing_task(task_id: str, db: Session = Depends(get_db)) -> ProcessingTaskOut:
+    task = task_service.get_task(db, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="后台任务不存在")
+    return ProcessingTaskOut.model_validate(task)
 
 
 @router.get("/{document_id}", response_model=DocumentOut, summary="文档详情")
@@ -81,3 +113,19 @@ def reindex_document(
     if document is None:
         raise HTTPException(status_code=404, detail="文档不存在")
     return DocumentOut.model_validate(document)
+
+
+@router.post(
+    "/{document_id}/reindex/async",
+    response_model=ProcessingTaskOut,
+    status_code=202,
+    summary="异步重新向量化文档",
+)
+def reindex_document_async(
+    document_id: int, db: Session = Depends(get_db)
+) -> ProcessingTaskOut:
+    if document_service.get_document(db, document_id) is None:
+        raise HTTPException(status_code=404, detail="文档不存在")
+    task = task_service.create_task(db, kind="reindex", document_id=document_id)
+    task_service.enqueue(task.id)
+    return ProcessingTaskOut.model_validate(task)
