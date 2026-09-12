@@ -1,0 +1,6 @@
+{$DOMAIN} {
+    encode zstd gzip
+    reverse_proxy kb-qa:8000 {
+        flush_interval -1
+    }
+}

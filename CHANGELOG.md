@@ -2,6 +2,16 @@
 
 本文件采用“功能分阶段”记录方式。项目尚未发布新的正式版本，以下内容均位于当前 `main` 分支的未发布版本中。
 
+## 部署与运行加固
+
+### 新增
+
+- 镜像已包含 Web 静态资源，容器可直接提供完整网页界面。
+- 新增 `docker-compose.prod.yml`：应用仅暴露于内部网络，由 Caddy 对外提供服务。
+- Caddy 根据 `DOMAIN` 自动申请和续期 HTTPS 证书，并支持 SSE 流式转发。
+- 增加容器健康检查及后台索引任务重启恢复。
+- 新增 [部署指南](DEPLOYMENT.md)，包括服务器准备、上线、更新、回滚和备份说明。
+
 ## 第四阶段：会话体验与管理概览
 
 提交：`64253da feat: improve conversations and add admin overview`

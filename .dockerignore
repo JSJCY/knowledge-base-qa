@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+__pycache__
+*.py[cod]
+.env
+*.db
+*.sqlite3
+data
+.pytest_cache
+.ruff_cache
+.coverage
+htmlcov
+pytest-cache-files-mkpbacni

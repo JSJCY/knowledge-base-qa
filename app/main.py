@@ -26,6 +26,9 @@ def _error_payload(code: str, message: str, request_id: str, **extra: object) ->
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db()
+    from app.services.tasks import recover_pending_tasks
+
+    recover_pending_tasks()
     yield
 
 

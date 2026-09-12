@@ -1,0 +1,34 @@
+services:
+  kb-qa:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: sqlite:////app/data/kb.db
+      UPLOAD_DIR: /app/data/uploads
+      DEBUG: "false"
+    volumes:
+      - kb_data:/app/data
+    restart: unless-stopped
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2-alpine
+    env_file: .env
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      kb-qa:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  kb_data:
+  caddy_data:
+  caddy_config:

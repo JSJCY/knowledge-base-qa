@@ -2,6 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.db import SessionLocal
@@ -26,6 +27,24 @@ def get_task(db: Session, task_id: str) -> ProcessingTask | None:
 
 def enqueue(task_id: str) -> None:
     _executor.submit(_run_task, task_id)
+
+
+def recover_pending_tasks() -> None:
+    """服务重启后重新入队未完成任务，避免容器重启造成任务永久卡住。"""
+    db = SessionLocal()
+    try:
+        tasks = list(
+            db.scalars(
+                select(ProcessingTask).where(ProcessingTask.status.in_(("queued", "running")))
+            )
+        )
+        for task in tasks:
+            task.status = "queued"
+        db.commit()
+        for task in tasks:
+            enqueue(task.id)
+    finally:
+        db.close()
 
 
 def _run_task(task_id: str) -> None:
