@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.db import get_db
+from app.models.user import User
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -19,6 +20,7 @@ from app.schemas.chat import (
 )
 from app.services import conversations as conversation_service
 from app.services import rag as rag_service
+from app.services.auth import current_user
 from app.services.embedding import EmbeddingService, get_embedding_service
 from app.services.llm import LLMError, LLMService, get_llm_service
 from app.services.rag import ConversationNotFoundError
@@ -41,6 +43,7 @@ def chat(
     db: Session = Depends(get_db),
     embedder: EmbeddingService = Depends(get_embedding_service),
     llm: LLMService = Depends(get_llm_service),
+    user: User | None = Depends(current_user),
 ) -> ChatResponse:
     settings = get_settings()
     try:
@@ -58,6 +61,7 @@ def chat(
             vector_weight=settings.rag_vector_weight,
             keyword_weight=settings.rag_keyword_weight,
             min_relevance_score=settings.rag_min_relevance_score,
+            owner_id=user.id if user else None,
         )
     except ConversationNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -85,6 +89,7 @@ def chat_stream(
     db: Session = Depends(get_db),
     embedder: EmbeddingService = Depends(get_embedding_service),
     llm: LLMService = Depends(get_llm_service),
+    user: User | None = Depends(current_user),
 ) -> StreamingResponse:
     settings = get_settings()
 
@@ -100,6 +105,7 @@ def chat_stream(
                 vector_weight=settings.rag_vector_weight,
                 keyword_weight=settings.rag_keyword_weight,
                 min_relevance_score=settings.rag_min_relevance_score,
+                owner_id=user.id if user else None,
             ):
                 preparation = _preparation
                 yield f"event: delta\ndata: {json.dumps({'content': part}, ensure_ascii=False)}\n\n"
@@ -121,8 +127,10 @@ def chat_stream(
 
 
 @router.get("/conversations", response_model=list[ConversationOut], summary="会话列表")
-def list_conversations(db: Session = Depends(get_db)) -> list[ConversationOut]:
-    convs = conversation_service.list_conversations(db)
+def list_conversations(
+    db: Session = Depends(get_db), user: User | None = Depends(current_user)
+) -> list[ConversationOut]:
+    convs = conversation_service.list_conversations(db, user.id if user else None)
     return [_conversation_out(c) for c in convs]
 
 
@@ -132,9 +140,9 @@ def list_conversations(db: Session = Depends(get_db)) -> list[ConversationOut]:
     summary="会话详情（含消息与引用）",
 )
 def get_conversation(
-    conversation_id: int, db: Session = Depends(get_db)
+    conversation_id: int, db: Session = Depends(get_db), user: User | None = Depends(current_user)
 ) -> ConversationDetailOut:
-    conv = conversation_service.get_conversation(db, conversation_id)
+    conv = conversation_service.get_conversation(db, conversation_id, user.id if user else None)
     if conv is None:
         raise HTTPException(status_code=404, detail="会话不存在")
     return ConversationDetailOut(
@@ -148,7 +156,7 @@ def get_conversation(
 
 @router.delete("/conversations/{conversation_id}", status_code=204, summary="删除会话")
 def delete_conversation(
-    conversation_id: int, db: Session = Depends(get_db)
+    conversation_id: int, db: Session = Depends(get_db), user: User | None = Depends(current_user)
 ) -> None:
-    if not conversation_service.delete_conversation(db, conversation_id):
+    if not conversation_service.delete_conversation(db, conversation_id, user.id if user else None):
         raise HTTPException(status_code=404, detail="会话不存在")

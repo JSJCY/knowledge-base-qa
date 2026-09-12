@@ -1,6 +1,8 @@
 """文档服务层：上传入库、查询、删除。"""
 
+import hashlib
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import UploadFile
@@ -20,14 +22,21 @@ class FileTooLargeError(ValueError):
         self.max_mb = max_mb
 
 
+class DuplicateDocumentError(ValueError):
+    pass
+
+
 def create_document_from_upload(
-    db: Session, upload: UploadFile, embedder: EmbeddingService
+    db: Session, upload: UploadFile, embedder: EmbeddingService, owner_id: int | None = None
 ) -> Document:
     """解析上传文件 → 切块 → 向量化 → 原文落盘 → 写入数据库。"""
     settings = get_settings()
     filename = upload.filename or "unnamed"
     extension = Path(filename).suffix.lower()
     data = upload.file.read()
+
+    content_hash = hashlib.sha256(data).hexdigest()
+    _ensure_not_duplicate(db, content_hash, owner_id)
 
     if len(data) > settings.max_upload_mb * 1024 * 1024:
         raise FileTooLargeError(settings.max_upload_mb)
@@ -39,6 +48,9 @@ def create_document_from_upload(
 
     document = Document(
         filename=filename,
+        owner_id=owner_id,
+        content_hash=content_hash,
+        version=_next_version(db, filename, owner_id),
         extension=extension,
         size_bytes=len(data),
         chunk_count=len(chunk_texts),
@@ -61,12 +73,16 @@ def create_document_from_upload(
     return document
 
 
-def create_pending_document(db: Session, upload: UploadFile) -> Document:
+def create_pending_document(
+    db: Session, upload: UploadFile, owner_id: int | None = None
+) -> Document:
     """快速保存原文件并创建待处理记录，解析与向量化交给后台任务。"""
     settings = get_settings()
     filename = upload.filename or "unnamed"
     extension = Path(filename).suffix.lower()
     data = upload.file.read()
+    content_hash = hashlib.sha256(data).hexdigest()
+    _ensure_not_duplicate(db, content_hash, owner_id)
     if extension not in SUPPORTED_EXTENSIONS:
         from app.services.parsing import UnsupportedFileTypeError
 
@@ -80,6 +96,9 @@ def create_pending_document(db: Session, upload: UploadFile) -> Document:
     storage_path = _store_original(Path(settings.upload_dir), extension, data)
     document = Document(
         filename=filename,
+        owner_id=owner_id,
+        content_hash=content_hash,
+        version=_next_version(db, filename, owner_id),
         extension=extension,
         size_bytes=len(data),
         storage_path=str(storage_path),
@@ -126,11 +145,42 @@ def _store_original(upload_dir: Path, extension: str, data: bytes) -> Path:
     return target
 
 
-def list_documents(db: Session, *, skip: int = 0, limit: int = 20) -> tuple[int, list[Document]]:
-    total = db.scalar(select(func.count(Document.id))) or 0
+def _owned_filter(owner_id: int | None):
+    return Document.owner_id.is_(None) if owner_id is None else Document.owner_id == owner_id
+
+
+def _ensure_not_duplicate(db: Session, content_hash: str, owner_id: int | None) -> None:
+    duplicate = db.scalar(
+        select(Document).where(
+            Document.content_hash == content_hash,
+            _owned_filter(owner_id),
+            Document.deleted_at.is_(None),
+        )
+    )
+    if duplicate is not None:
+        raise DuplicateDocumentError(
+            f"相同内容已存在：{duplicate.filename}（版本 {duplicate.version}）"
+        )
+
+
+def _next_version(db: Session, filename: str, owner_id: int | None) -> int:
+    latest = db.scalar(
+        select(func.max(Document.version)).where(
+            Document.filename == filename, _owned_filter(owner_id)
+        )
+    )
+    return (latest or 0) + 1
+
+
+def list_documents(
+    db: Session, *, skip: int = 0, limit: int = 20, owner_id: int | None = None
+) -> tuple[int, list[Document]]:
+    filters = (_owned_filter(owner_id), Document.deleted_at.is_(None))
+    total = db.scalar(select(func.count(Document.id)).where(*filters)) or 0
     items = list(
         db.scalars(
             select(Document)
+            .where(*filters)
             .order_by(Document.created_at.desc(), Document.id.desc())
             .offset(skip)
             .limit(limit)
@@ -139,8 +189,12 @@ def list_documents(db: Session, *, skip: int = 0, limit: int = 20) -> tuple[int,
     return total, items
 
 
-def get_document(db: Session, document_id: int) -> Document | None:
-    return db.get(Document, document_id)
+def get_document(db: Session, document_id: int, owner_id: int | None = None) -> Document | None:
+    return db.scalar(
+        select(Document).where(
+            Document.id == document_id, _owned_filter(owner_id), Document.deleted_at.is_(None)
+        )
+    )
 
 
 def list_chunks(db: Session, document_id: int) -> list[Chunk]:
@@ -153,15 +207,27 @@ def list_chunks(db: Session, document_id: int) -> list[Chunk]:
     )
 
 
-def delete_document(db: Session, document_id: int) -> bool:
-    document = db.get(Document, document_id)
+def delete_document(db: Session, document_id: int, owner_id: int | None = None) -> bool:
+    document = get_document(db, document_id, owner_id)
     if document is None:
         return False
-    if document.storage_path:
-        Path(document.storage_path).unlink(missing_ok=True)
-    db.delete(document)
+    document.deleted_at = datetime.now(UTC)
+    document.status = "deleted"
     db.commit()
     return True
+
+
+def restore_document(db: Session, document_id: int, owner_id: int | None = None) -> Document | None:
+    document = db.scalar(
+        select(Document).where(Document.id == document_id, _owned_filter(owner_id))
+    )
+    if document is None or document.deleted_at is None:
+        return None
+    document.deleted_at = None
+    document.status = "indexed" if document.chunk_count else "queued"
+    db.commit()
+    db.refresh(document)
+    return document
 
 
 def reindex_document(db: Session, document_id: int, embedder: EmbeddingService) -> Document | None:

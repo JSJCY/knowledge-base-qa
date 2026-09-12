@@ -19,6 +19,7 @@ class DocumentOut(BaseModel):
 
     id: int
     filename: str
+    version: int
     extension: str
     size_bytes: int
     status: str

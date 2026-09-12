@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     debug: bool = False
     api_key: str = ""
     rate_limit_per_minute: int = 120
+    auth_enabled: bool = False
+    auth_token_expire_hours: int = 24
 
     # 数据库
     database_url: str = "sqlite:///./kb.db"

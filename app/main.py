@@ -12,7 +12,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import chat, documents, health, search
+from app.api.routes import auth, chat, documents, health, search
 from app.core.config import get_settings
 from app.core.db import init_db
 
@@ -38,6 +38,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     application.include_router(health.router)
+    application.include_router(auth.router)
     application.include_router(documents.router)
     application.include_router(search.router)
     application.include_router(chat.router)

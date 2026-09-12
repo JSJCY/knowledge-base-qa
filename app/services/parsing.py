@@ -25,7 +25,11 @@ def parse_bytes(data: bytes, extension: str) -> str:
     if not data:
         raise EmptyFileError("文件内容为空")
     if ext == ".pdf":
+        if not data.startswith(b"%PDF"):
+            raise ValueError("PDF 文件签名无效")
         return _parse_pdf(data)
+    if b"\x00" in data:
+        raise ValueError("文本文件包含不允许的二进制内容")
     text = _decode_text(data)
     if not text.strip():
         raise EmptyFileError("文件没有可提取的文本")

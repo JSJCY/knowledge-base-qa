@@ -104,8 +104,12 @@ def test_delete_document(client, db_session):
     assert resp.status_code == 204
 
     assert client.get(f"/api/v1/documents/{doc_id}").status_code == 404
-    assert db_session.query(Chunk).filter_by(document_id=doc_id).count() == 0
-    assert client.delete(f"/api/v1/documents/{doc_id}").status_code == 404
+    # 软删除保留切块与原文件，可在需要时恢复。
+    assert db_session.query(Chunk).filter_by(document_id=doc_id).count() == 1
+    restored = client.post(f"/api/v1/documents/{doc_id}/restore")
+    assert restored.status_code == 200
+    assert restored.json()["status"] == "indexed"
+    assert client.delete(f"/api/v1/documents/{doc_id}").status_code == 204
 
 
 def test_upload_size_limit(client, monkeypatch):
@@ -115,3 +119,26 @@ def test_upload_size_limit(client, monkeypatch):
     monkeypatch.setattr(settings, "max_upload_mb", 0)
     resp = _upload(client, "big.txt", b"x" * 1024)
     assert resp.status_code == 413
+
+
+def test_enabled_auth_isolates_documents(client, monkeypatch):
+    from app.core.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "auth_enabled", True)
+    alice = client.post(
+        "/api/v1/auth/register", json={"username": "alice", "password": "password1"}
+    )
+    assert alice.status_code == 201
+    token = client.post("/api/v1/auth/login", json={"username": "alice", "password": "password1"})
+    headers = {"Authorization": "Bearer " + token.json()["access_token"]}
+    upload = client.post(
+        UPLOAD_URL,
+        files={"file": ("private.txt", b"alice private document", "text/plain")},
+        headers=headers,
+    )
+    assert upload.status_code == 201
+    bob = client.post("/api/v1/auth/register", json={"username": "bob", "password": "password2"})
+    assert bob.status_code == 201
+    bob_token = client.post("/api/v1/auth/login", json={"username": "bob", "password": "password2"})
+    bob_headers = {"Authorization": "Bearer " + bob_token.json()["access_token"]}
+    assert client.get("/api/v1/documents", headers=bob_headers).json()["total"] == 0
