@@ -158,6 +158,7 @@ body {
 
 /* ---------- 文档列表 ---------- */
 .doc-list, .conv-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.conv-search { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font: inherit; }
 
 .doc-item, .conv-item {
   display: flex;
@@ -303,6 +304,9 @@ body {
 .msg.assistant .bubble pre code { background: transparent; padding: 0; color: inherit; }
 .msg.assistant .bubble a { color: var(--primary-dark); text-decoration: underline; }
 .msg.assistant.streaming .bubble { border-color: #a9bdf5; }
+.message-actions { display: flex; gap: 5px; margin-top: 5px; }
+.feedback-btn { border: 1px solid var(--border); background: var(--surface); border-radius: 6px; padding: 3px 6px; cursor: pointer; }
+.feedback-btn.active { border-color: var(--primary); background: #eef2ff; }
 .code-block { padding: 0 !important; overflow: hidden; }
 .code-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #111827; color: #cbd5e1; font: 12px Consolas, monospace; }
 .code-copy, .cite-locate { border: 1px solid #64748b; border-radius: 5px; background: transparent; color: inherit; padding: 3px 8px; cursor: pointer; font: inherit; }
@@ -445,6 +449,12 @@ body {
 }
 
 .search-results { flex: 1; overflow-y: auto; padding: 14px 20px 20px; }
+.admin-panel { padding: 24px; overflow-y: auto; }
+.admin-panel h2 { font-size: 18px; margin-bottom: 16px; }
+.admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 5px; box-shadow: var(--shadow-sm); }
+.stat-card strong { color: var(--primary); font-size: 25px; }
+.stat-card span { color: var(--muted); font-size: 13px; }
 
 .result-card {
   background: var(--surface);

@@ -319,7 +319,8 @@ async function waitForTask(task, label) {
 
 async function loadConversations() {
   try {
-    const convs = await api("/api/v1/conversations");
+    const query = $("#conv-search") ? $("#conv-search").value.trim() : "";
+    const convs = await api("/api/v1/conversations" + (query ? "?q=" + encodeURIComponent(query) : ""));
     renderConversations(convs);
   } catch (e) {
     /* 静默：会话列表非关键路径 */
@@ -362,6 +363,18 @@ function renderConversations(convs) {
     };
 
     li.onclick = () => openConversation(conv.id);
+    const rename = document.createElement("button");
+    rename.className = "icon-btn";
+    rename.textContent = "✎";
+    rename.title = "重命名会话";
+    rename.onclick = async (e) => {
+      e.stopPropagation();
+      const title = prompt("会话名称", conv.title);
+      if (!title || !title.trim()) return;
+      await api("/api/v1/conversations/" + conv.id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: title.trim() }) });
+      loadConversations();
+    };
+    li.appendChild(rename);
     li.appendChild(del);
     ul.appendChild(li);
   });
@@ -374,7 +387,7 @@ async function openConversation(id) {
     switchTab("chat");
     const box = $("#chat-messages");
     box.innerHTML = "";
-    detail.messages.forEach((m) => appendMessage(m.role, m.content, m.citations || []));
+    detail.messages.forEach((m) => appendMessage(m.role, m.content, m.citations || [], m.id, m.feedback));
     loadConversations();
   } catch (e) {
     toast("打开会话失败：" + e.message, true);
@@ -395,7 +408,7 @@ function newChat() {
 
 /* ================= 聊天 ================= */
 
-function appendMessage(role, content, citations) {
+function appendMessage(role, content, citations, messageId, feedback) {
   const box = $("#chat-messages");
   const empty = $("#chat-empty");
   if (empty) empty.remove();
@@ -407,6 +420,22 @@ function appendMessage(role, content, citations) {
   bubble.className = "bubble";
   bubble.innerHTML = role === "assistant" ? renderMarkdown(content) : escapeHtml(content).replace(/\n/g, "<br>");
   wrap.appendChild(bubble);
+  if (role === "assistant" && messageId) {
+    const actions = document.createElement("div");
+    actions.className = "message-actions";
+    ["up", "down"].forEach((value) => {
+      const button = document.createElement("button");
+      button.className = "feedback-btn" + (feedback === value ? " active" : "");
+      button.textContent = value === "up" ? "👍" : "👎";
+      button.onclick = async () => {
+        await postJson("/api/v1/conversations/" + state.conversationId + "/messages/" + messageId + "/feedback", { feedback: value });
+        button.parentElement.querySelectorAll(".feedback-btn").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+      };
+      actions.appendChild(button);
+    });
+    wrap.appendChild(actions);
+  }
 
   if (role === "assistant" && citations) {
     const cites = document.createElement("div");
@@ -564,6 +593,10 @@ function bindChat() {
     input.style.height = Math.min(input.scrollHeight, 160) + "px";
   });
   $("#btn-new-chat").addEventListener("click", newChat);
+  $("#conv-search").addEventListener("input", () => {
+    clearTimeout(state.conversationSearchTimer);
+    state.conversationSearchTimer = setTimeout(loadConversations, 250);
+  });
   document.addEventListener("click", (event) => {
     const copyButton = event.target.closest(".code-copy");
     if (copyButton) copyCode(copyButton.dataset.codeId);
@@ -649,8 +682,18 @@ function switchTab(name) {
 
 function bindTabs() {
   document.querySelectorAll(".tab").forEach((t) => {
-    t.addEventListener("click", () => switchTab(t.dataset.tab));
+    t.addEventListener("click", () => { switchTab(t.dataset.tab); if (t.dataset.tab === "admin") loadAdminOverview(); });
   });
+}
+
+async function loadAdminOverview() {
+  const box = $("#admin-stats");
+  box.textContent = "加载中…";
+  try {
+    const data = await api("/api/v1/admin/overview");
+    const stats = [["文档", data.document_count], ["已索引", data.indexed_document_count], ["会话", data.conversation_count], ["消息", data.message_count], ["好评", data.feedback_up_count], ["差评", data.feedback_down_count]];
+    box.innerHTML = stats.map((item) => '<div class="stat-card"><strong>' + item[1] + "</strong><span>" + item[0] + "</span></div>").join("");
+  } catch (e) { box.textContent = "加载失败：" + e.message; }
 }
 
 /* ================= 初始化 ================= */

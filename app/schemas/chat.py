@@ -37,6 +37,7 @@ class MessageOut(BaseModel):
     role: str
     content: str
     citations: list[CitationOut] = []
+    feedback: str | None = None
 
     @field_validator("citations", mode="before")
     @classmethod
@@ -55,3 +56,20 @@ class ConversationOut(BaseModel):
 
 class ConversationDetailOut(ConversationOut):
     messages: list[MessageOut] = []
+
+
+class ConversationRenameRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=255)
+
+
+class MessageFeedbackRequest(BaseModel):
+    feedback: str = Field(pattern=r"^(up|down)$")
+
+
+class AdminOverviewOut(BaseModel):
+    document_count: int
+    indexed_document_count: int
+    conversation_count: int
+    message_count: int
+    feedback_up_count: int
+    feedback_down_count: int

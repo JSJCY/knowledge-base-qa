@@ -38,6 +38,7 @@ class Message(Base):
     content: Mapped[str] = mapped_column(Text)
     # assistant 消息的引用来源（JSON 列表），user 消息为 None
     citations: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    feedback: Mapped[str | None] = mapped_column(String(16), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     conversation: Mapped[Conversation] = relationship(back_populates="messages")

@@ -41,6 +41,7 @@ def _add_sqlite_columns() -> None:
             "deleted_at": "DATETIME",
         },
         "conversations": {"owner_id": "INTEGER"},
+        "messages": {"feedback": "VARCHAR(16)"},
     }
     inspector = inspect(engine)
     with engine.begin() as connection:

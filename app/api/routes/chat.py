@@ -3,8 +3,8 @@
 import json
 from collections.abc import Iterator
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -16,6 +16,8 @@ from app.schemas.chat import (
     CitationOut,
     ConversationDetailOut,
     ConversationOut,
+    ConversationRenameRequest,
+    MessageFeedbackRequest,
     MessageOut,
 )
 from app.services import conversations as conversation_service
@@ -128,9 +130,12 @@ def chat_stream(
 
 @router.get("/conversations", response_model=list[ConversationOut], summary="会话列表")
 def list_conversations(
-    db: Session = Depends(get_db), user: User | None = Depends(current_user)
+    q: str | None = Query(None, min_length=1, max_length=100),
+    db: Session = Depends(get_db),
+    user: User | None = Depends(current_user),
 ) -> list[ConversationOut]:
-    convs = conversation_service.list_conversations(db, user.id if user else None)
+    owner_id = user.id if user else None
+    convs = conversation_service.search_conversations(db, q, owner_id) if q else conversation_service.list_conversations(db, owner_id)
     return [_conversation_out(c) for c in convs]
 
 
@@ -160,3 +165,48 @@ def delete_conversation(
 ) -> None:
     if not conversation_service.delete_conversation(db, conversation_id, user.id if user else None):
         raise HTTPException(status_code=404, detail="会话不存在")
+
+
+@router.patch("/conversations/{conversation_id}", response_model=ConversationOut, summary="重命名会话")
+def rename_conversation(
+    conversation_id: int,
+    request: ConversationRenameRequest,
+    db: Session = Depends(get_db),
+    user: User | None = Depends(current_user),
+) -> ConversationOut:
+    conversation = conversation_service.rename_conversation(
+        db, conversation_id, request.title, user.id if user else None
+    )
+    if conversation is None:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    return _conversation_out(conversation)
+
+
+@router.post("/conversations/{conversation_id}/messages/{message_id}/feedback", response_model=MessageOut, summary="提交回答反馈")
+def message_feedback(
+    conversation_id: int,
+    message_id: int,
+    request: MessageFeedbackRequest,
+    db: Session = Depends(get_db),
+    user: User | None = Depends(current_user),
+) -> MessageOut:
+    message = conversation_service.set_feedback(
+        db, conversation_id, message_id, request.feedback, user.id if user else None
+    )
+    if message is None:
+        raise HTTPException(status_code=404, detail="回答或会话不存在")
+    return MessageOut.model_validate(message)
+
+
+@router.get("/conversations/{conversation_id}/export", response_class=PlainTextResponse, summary="导出会话 Markdown")
+def export_conversation(
+    conversation_id: int, db: Session = Depends(get_db), user: User | None = Depends(current_user)
+) -> PlainTextResponse:
+    conversation = conversation_service.get_conversation(db, conversation_id, user.id if user else None)
+    if conversation is None:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    lines = [f"# {conversation.title}\n"]
+    for message in conversation.messages:
+        label = "用户" if message.role == "user" else "助手"
+        lines.extend([f"## {label}\n", message.content, ""])
+    return PlainTextResponse("\n".join(lines), headers={"Content-Disposition": f'attachment; filename="conversation-{conversation_id}.md"'})
