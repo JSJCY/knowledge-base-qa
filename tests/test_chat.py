@@ -52,7 +52,29 @@ def test_chat_on_empty_kb(client):
     assert resp.status_code == 200
     body = resp.json()
     assert body["citations"] == []
-    assert body["answer"]
+    assert "未找到足够相关" in body["answer"]
+
+
+def test_chat_refuses_low_relevance_question(client):
+    _upload_kb(client)
+    resp = client.post("/api/v1/chat", json={"question": "量子纠缠如何实现？"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "未找到足够相关" in body["answer"]
+
+
+def test_compact_history_keeps_recent_messages_and_summarizes_older_ones():
+    from app.models.chat import Message
+    from app.services.rag import compact_history
+
+    history = [
+        Message(role="user", content="早期问题" * 20),
+        Message(role="assistant", content="早期回答" * 20),
+        Message(role="user", content="最近问题"),
+    ]
+    summary, kept = compact_history(history, char_budget=30)
+    assert "早期问题" in summary
+    assert [message.content for message in kept] == ["最近问题"]
 
 
 def test_chat_conversation_continuity(client, fake_llm):

@@ -52,6 +52,12 @@ def chat(
             top_k=request.top_k,
             conversation_id=request.conversation_id,
             history_limit=settings.rag_history_limit,
+            history_char_budget=settings.rag_history_char_budget,
+            query_rewrite_enabled=settings.rag_query_rewrite_enabled,
+            candidate_multiplier=settings.rag_candidate_multiplier,
+            vector_weight=settings.rag_vector_weight,
+            keyword_weight=settings.rag_keyword_weight,
+            min_relevance_score=settings.rag_min_relevance_score,
         )
     except ConversationNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -88,6 +94,12 @@ def chat_stream(
             for part, _preparation in rag_service.stream_answer_question(
                 db, embedder, llm, question=request.question, top_k=request.top_k,
                 conversation_id=request.conversation_id, history_limit=settings.rag_history_limit,
+                history_char_budget=settings.rag_history_char_budget,
+                query_rewrite_enabled=settings.rag_query_rewrite_enabled,
+                candidate_multiplier=settings.rag_candidate_multiplier,
+                vector_weight=settings.rag_vector_weight,
+                keyword_weight=settings.rag_keyword_weight,
+                min_relevance_score=settings.rag_min_relevance_score,
             ):
                 preparation = _preparation
                 yield f"event: delta\ndata: {json.dumps({'content': part}, ensure_ascii=False)}\n\n"

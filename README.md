@@ -15,10 +15,10 @@
 - 📄 **文档管理**：上传 / 列表 / 详情 / 切块查看 / 删除；支持 TXT、Markdown、PDF，兼容 UTF-8 与 GB18030 中文编码
 - 🧩 **智能切块**：段落感知打包 + 超长段落窗口硬切 + 块间重叠，兼顾语义完整与检索粒度
 - 🧠 **本地向量化**：fastembed + `BAAI/bge-small-zh-v1.5`（ONNX 本地推理，无需付费 embedding API，模型仅首次下载）
-- 🔍 **语义检索**：余弦相似度排序，支持全库检索或限定单文档，返回相关度分数
-- 💬 **RAG 问答**：DeepSeek 严格依据检索资料作答，资料不足时诚实拒答不编造；回答自动附带引用来源（文档名 / 段落号 / 相似度）
+- 🔍 **混合检索**：融合向量语义与关键词命中，候选集重排序，降低专有名词漏召回；支持全库检索或限定单文档
+- 💬 **RAG 问答**：支持低相关拒答、上下文压缩与可选查询改写；回答自动附带引用来源（文档名 / 段落号 / 相似度）
 - 🗂 **多轮会话**：会话与消息持久化（SQLite），自动生成会话标题，追问自动携带上下文
-- 🖥 **Web 界面**：内置零依赖单页前端（问答聊天、引用来源展开、文档拖拽上传、检索面板、会话切换），启动即用
+- 🖥 **Web 界面**：内置零依赖单页前端，支持流式回答、Markdown（表格 / 公式 / 代码块高亮与复制）、引用来源定位、文档拖拽上传与会话切换
 - 🔌 **可插拔设计**：向量化与 LLM 均为依赖注入；未配置 API Key 时自动降级 Mock 模式，全流程仍可跑通
 - ✅ **工程化**：50 个 pytest 用例、92% 覆盖率、ruff 代码规范、GitHub Actions CI、Swagger 交互文档
 
@@ -133,6 +133,9 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 | `DEEPSEEK_MODEL` | `deepseek-chat` | 对话模型名 |
 | `LLM_TEMPERATURE` | `0.3` | 生成温度，越低越严谨 |
 | `RAG_HISTORY_LIMIT` | `10` | 多轮对话携带的历史消息条数 |
+| `RAG_HISTORY_CHAR_BUDGET` | `6000` | 多轮历史上下文的字符预算，超出部分压缩为摘要 |
+| `RAG_MIN_RELEVANCE_SCORE` | `0.15` | 混合检索低于此分数时拒答，避免无依据生成 |
+| `RAG_QUERY_REWRITE_ENABLED` | `false` | 是否使用模型将追问改写为独立检索问题（会增加一次模型调用） |
 | `EMBEDDING_MODEL` | `BAAI/bge-small-zh-v1.5` | fastembed 向量模型 |
 | `HF_ENDPOINT` | 空 | HuggingFace 镜像（国内建议 `https://hf-mirror.com`） |
 | `DATABASE_URL` | `sqlite:///./kb.db` | 数据库连接串 |

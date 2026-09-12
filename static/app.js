@@ -37,14 +37,52 @@ function escapeHtml(s) {
     .replace(/'/g, "&#39;");
 }
 
-// 轻量 Markdown 渲染器：先完整转义，再处理常用语法，避免模型输出被当作 HTML 执行。
+const markdownCodeBlocks = new Map();
+let markdownCodeSequence = 0;
+const citationStore = new Map();
+let citationSequence = 0;
+
+function highlightCode(code, language) {
+  let html = escapeHtml(code);
+  if (["js", "javascript", "ts", "typescript", "python", "py"].includes(language)) {
+    html = html.replace(/\b(const|let|var|function|return|if|else|for|while|def|class|import|from|async|await|True|False|None)\b/g,
+      '<span class="token-keyword">$1</span>');
+  }
+  if (["json", "js", "javascript"].includes(language)) {
+    html = html.replace(/(&quot;[^&]*?&quot;)(?=\s*:)/g, '<span class="token-property">$1</span>');
+  }
+  return html;
+}
+
+function renderTable(block) {
+  const rows = block.trim().split("\n").map((row) => row.replace(/^\||\|$/g, "").split("|").map((cell) => cell.trim()));
+  if (rows.length < 3 || !rows[1].every((cell) => /^:?-{3,}:?$/.test(cell))) return block;
+  const head = rows[0].map((cell) => "<th>" + cell + "</th>").join("");
+  const body = rows.slice(2).map((row) => "<tr>" + row.map((cell) => "<td>" + cell + "</td>").join("") + "</tr>").join("");
+  return "<div class=\"table-wrap\"><table><thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
+}
+
+// 轻量 Markdown 渲染器：先完整转义，再处理受控语法，避免模型输出被当作 HTML 执行。
 function renderMarkdown(source) {
-  let text = escapeHtml(source || "").replace(/\r\n?/g, "\n");
+  let raw = String(source || "").replace(/\r\n?/g, "\n");
   const codeBlocks = [];
-  text = text.replace(/```(?:[\w+-]+)?\n?([\s\S]*?)```/g, (_, code) => {
-    codeBlocks.push('<pre><code>' + code.trimEnd() + '</code></pre>');
+  const mathBlocks = [];
+  const inlineMath = [];
+  raw = raw.replace(/```([\w+-]*)\n?([\s\S]*?)```/g, (_, language, code) => {
+    const id = "code-" + (++markdownCodeSequence);
+    markdownCodeBlocks.set(id, code.trimEnd());
+    codeBlocks.push('<pre class="code-block"><div class="code-toolbar"><span>' + escapeHtml(language || "text") + '</span><button class="code-copy" data-code-id="' + id + '">复制</button></div><code>' + highlightCode(code.trimEnd(), language.toLowerCase()) + '</code></pre>');
     return "\n@@CODE" + (codeBlocks.length - 1) + "@@\n";
   });
+  raw = raw.replace(/\$\$([\s\S]*?)\$\$/g, (_, formula) => {
+    mathBlocks.push('<div class="math-block">' + escapeHtml(formula.trim()) + '</div>');
+    return "\n@@MATH" + (mathBlocks.length - 1) + "@@\n";
+  });
+  raw = raw.replace(/\$([^$\n]+)\$/g, (_, formula) => {
+    inlineMath.push('<span class="math-inline">' + escapeHtml(formula) + "</span>");
+    return "@@INLINE_MATH" + (inlineMath.length - 1) + "@@";
+  });
+  let text = escapeHtml(raw);
   text = text.replace(/^###### (.*)$/gm, "<h6>$1</h6>")
     .replace(/^##### (.*)$/gm, "<h5>$1</h5>")
     .replace(/^#### (.*)$/gm, "<h4>$1</h4>")
@@ -59,9 +97,30 @@ function renderMarkdown(source) {
     .replace(/__([^_\n]+)__/g, "<strong>$1</strong>")
     .replace(/\*([^*\n]+)\*/g, "<em>$1</em>")
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-  text = text.split(/\n{2,}/).map((block) => /^<(h[1-6]|ul|pre|blockquote)/.test(block.trim())
+  text = text.replace(/(^\|.+\|\n\|(?:\s*:?-{3,}:?\s*\|)+\n(?:\|.+\|\n?)+)/gm, renderTable);
+  text = text.split(/\n{2,}/).map((block) => /^(<(h[1-6]|ul|blockquote|div)|@@(?:CODE|MATH))/.test(block.trim())
     ? block : "<p>" + block.replace(/\n/g, "<br>") + "</p>").join("");
-  return text.replace(/@@CODE(\d+)@@/g, (_, i) => codeBlocks[Number(i)]);
+  return text
+    .replace(/@@CODE(\d+)@@/g, (_, i) => codeBlocks[Number(i)])
+    .replace(/@@MATH(\d+)@@/g, (_, i) => mathBlocks[Number(i)])
+    .replace(/@@INLINE_MATH(\d+)@@/g, (_, i) => inlineMath[Number(i)]);
+}
+
+async function copyCode(id) {
+  const code = markdownCodeBlocks.get(id);
+  if (code == null) return;
+  try {
+    await navigator.clipboard.writeText(code);
+    toast("代码已复制");
+  } catch (_) {
+    const input = document.createElement("textarea");
+    input.value = code;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("copy");
+    input.remove();
+    toast("代码已复制");
+  }
 }
 
 function formatSize(bytes) {
@@ -340,6 +399,8 @@ function appendMessage(role, content, citations) {
       let html =
         '<div class="cites-title">📎 引用来源（' + citations.length + "，点击展开原文）</div>";
       citations.forEach((c) => {
+        const citationId = "citation-" + (++citationSequence);
+        citationStore.set(citationId, c);
         html +=
           '<details class="cite"><summary>' +
           '<span class="cite-file">' + escapeHtml(c.document_filename) + "</span>" +
@@ -347,6 +408,7 @@ function appendMessage(role, content, citations) {
           '<span class="cite-score">' + (c.score != null ? c.score.toFixed(3) : "") + "</span>" +
           "</summary>" +
           '<div class="cite-content">' + escapeHtml(c.content) + "</div>" +
+          '<button class="cite-locate" data-citation-id="' + citationId + '">在检索面板中定位</button>' +
           "</details>";
       });
       cites.innerHTML = html;
@@ -360,6 +422,20 @@ function appendMessage(role, content, citations) {
   box.appendChild(wrap);
   box.scrollTop = box.scrollHeight;
   return wrap;
+}
+
+function locateCitation(citation) {
+  switchTab("search");
+  $("#search-doc").value = String(citation.document_id);
+  $("#search-input").value = citation.content;
+  const box = $("#search-results");
+  box.innerHTML =
+    '<div class="source-location">' +
+    '<div class="result-head"><span class="result-file">📍 ' + escapeHtml(citation.document_filename) + '</span>' +
+    '<span class="result-idx">#块 ' + citation.chunk_index + '</span></div>' +
+    '<div class="result-content">' + escapeHtml(citation.content) + "</div>" +
+    '<button id="btn-source-search" class="btn">查看相邻检索结果</button></div>';
+  $("#btn-source-search").addEventListener("click", runSearch);
 }
 
 function appendStreamingMessage() {
@@ -472,6 +548,12 @@ function bindChat() {
     input.style.height = Math.min(input.scrollHeight, 160) + "px";
   });
   $("#btn-new-chat").addEventListener("click", newChat);
+  document.addEventListener("click", (event) => {
+    const copyButton = event.target.closest(".code-copy");
+    if (copyButton) copyCode(copyButton.dataset.codeId);
+    const locateButton = event.target.closest(".cite-locate");
+    if (locateButton) locateCitation(citationStore.get(locateButton.dataset.citationId));
+  });
 }
 
 /* ================= 检索面板 ================= */

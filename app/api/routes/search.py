@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.db import get_db
 from app.schemas.search import SearchRequest, SearchResponse, SearchResultOut
 from app.services.embedding import EmbeddingService, get_embedding_service
@@ -27,6 +28,10 @@ def search(
         query_vector,
         top_k=request.top_k,
         document_id=request.document_id,
+        keyword_query=request.query,
+        candidate_multiplier=get_settings().rag_candidate_multiplier,
+        vector_weight=get_settings().rag_vector_weight,
+        keyword_weight=get_settings().rag_keyword_weight,
     )
     return SearchResponse(
         query=request.query,

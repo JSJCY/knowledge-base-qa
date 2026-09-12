@@ -38,6 +38,12 @@ class Settings(BaseSettings):
 
     # RAG 问答
     rag_history_limit: int = 10
+    rag_history_char_budget: int = 6000
+    rag_min_relevance_score: float = 0.15
+    rag_candidate_multiplier: int = 3
+    rag_vector_weight: float = 0.7
+    rag_keyword_weight: float = 0.3
+    rag_query_rewrite_enabled: bool = False
 
     @property
     def llm_enabled(self) -> bool:
