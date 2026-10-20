@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "dataset_version": "1.0.0",
+  "seed": 20261020,
+  "count": 60,
+  "sources": [
+    {
+      "name": "XQuAD zh",
+      "url": "https://raw.githubusercontent.com/google-deepmind/xquad/master/xquad.zh.json",
+      "sha256": "691d0b3359bc6b8faa8de931dfdfe21d50a65861ae348e32a0d1a0190b0c8835",
+      "license": "CC-BY-SA-4.0"
+    },
+    {
+      "name": "HotpotQA validation first 100 rows",
+      "url": "https://datasets-server.huggingface.co/rows?dataset=hotpotqa%2Fhotpot_qa&config=distractor&split=validation&offset=0&length=100",
+      "sha256": "d2d4806c1337dc8e60958ac06647c630716479695bac029336f0e8ae3ba2234b",
+      "license": "CC-BY-SA-4.0",
+      "kaggle": "https://www.kaggle.com/datasets/jeromeblanchet/hotpotqa-question-answering-dataset"
+    }
+  ],
+  "files": {
+    "corpus.jsonl": "fbebf35791e5ae88318956f9aaa545763036cfbc99e6fef63df2012a0e1b226d",
+    "cases.jsonl": "42370328d93b96421ad8e6f4f3bf751a972650e077f059d653d7c22dc1b0cd9a",
+    "project_cases.source.json": "59e8053d444a6f9808a7b4280c4f752841abd2922253cbd1799094739a2c47aa"
+  }
+}

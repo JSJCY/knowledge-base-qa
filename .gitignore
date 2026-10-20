@@ -32,3 +32,7 @@ htmlcov/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Versioned evaluation fixtures (not runtime user data)
+!evals/data/
+!evals/data/**
