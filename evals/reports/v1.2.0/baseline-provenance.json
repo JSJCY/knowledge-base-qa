@@ -1,0 +1,7 @@
+{
+  "launch_commit": "fb96a54320c5fce68e3dcec636e2de0007cd04ce",
+  "evidence": "Run was launched at fb96a54 before runtime edits. Prompt hash matches that commit.",
+  "original_metadata_commit": "unknown",
+  "reason": "Git ownership check rejected metadata lookup; original metadata retained unchanged.",
+  "prompt_hash_verified_against_git": true
+}

@@ -1,0 +1,24 @@
+{
+  "baseline": ".tmp\\eval-baseline-final",
+  "candidate": ".tmp\\eval-release-scored-final",
+  "metric_deltas": {
+    "answer_token_f1": -0.05636521029863423,
+    "behavior_match_heuristic": -0.016666666666666607,
+    "behavior_match_judged": 0.06666666666666665,
+    "citation_coverage": 0.9032738095238095,
+    "completeness": 0.050000000000000044,
+    "context_precision_at_k": 0.018518518518518517,
+    "contradiction_rate": -0.08630952380952382,
+    "evidence_recall_at_k": 0.03703703703703698,
+    "faithfulness": 0.09375,
+    "forbidden_fact_count": 0.0,
+    "inappropriate_answer": 0.0,
+    "inappropriate_refusal": -0.018518518518518517,
+    "mrr": 0.03302469135802466,
+    "required_fact_coverage": 0.0,
+    "semantic_correctness": 0.04166666666666674,
+    "unsupported_claim_rate": -0.007440476190476192
+  },
+  "errors_delta": 0,
+  "note": "Positive deltas are not always improvements: forbidden_fact_count is lower-is-better."
+}

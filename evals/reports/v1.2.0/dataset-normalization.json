@@ -1,0 +1,13 @@
+{
+  "reason": "Portable dataset hashing across Git and Windows",
+  "original_file_hashes": {
+    "corpus.jsonl": "fbebf35791e5ae88318956f9aaa545763036cfbc99e6fef63df2012a0e1b226d",
+    "cases.jsonl": "42370328d93b96421ad8e6f4f3bf751a972650e077f059d653d7c22dc1b0cd9a"
+  },
+  "canonical_lf_file_hashes": {
+    "corpus.jsonl": "e1f672ac78c75338d0f2f58f3cc62f9765027dcd213cbb11ac9d6608c7264878",
+    "cases.jsonl": "4144618705ad2d696f12973cf3ba7bb6e1008c841a9ca109a07c1b3a6add5878"
+  },
+  "original_run_metadata": "*-raw/metadata.json and */metadata.original.json",
+  "scoring_changed": false
+}

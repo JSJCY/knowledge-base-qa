@@ -12,3 +12,10 @@ data
 .coverage
 htmlcov
 pytest-cache-files-mkpbacni
+
+.tmp
+.dsh-vision-toolkit
+artifacts
+evals/reports
+!evals/data
+!evals/data/**

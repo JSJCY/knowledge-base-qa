@@ -25,3 +25,11 @@ jobs:
 
       - name: Test (pytest + coverage)
         run: pytest --cov=app --cov-report=term
+
+      - name: Evaluation pipeline smoke (no model quality claim)
+        run: python -m app.evaluation run --embedding mock --llm mock --task e2e --split all --output artifacts/eval-smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: evaluation-smoke
+          path: artifacts/eval-smoke/

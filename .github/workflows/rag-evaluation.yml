@@ -1,0 +1,46 @@
+name: RAG quality evaluation
+on:
+  workflow_dispatch:
+    inputs:
+      split:
+        description: Dataset slice
+        type: choice
+        options: [dev, holdout, all]
+        default: dev
+      top_k:
+        description: Retrieved chunk count
+        type: number
+        default: 5
+permissions:
+  contents: read
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: "sqlite://"
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DEEPSEEK_MODEL: deepseek-chat
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -e ".[dev]"
+      - name: Check model secret
+        run: python -c "import os; assert os.environ.get('DEEPSEEK_API_KEY'), 'Configure DEEPSEEK_API_KEY repository secret first'"
+      - name: Run real models
+        env:
+          EVAL_SPLIT: ${{ inputs.split }}
+          EVAL_TOP_K: ${{ inputs.top_k }}
+        run: python -m app.evaluation run --task e2e --embedding real --llm real --split "$EVAL_SPLIT" --top-k "$EVAL_TOP_K" --workers 4 --output artifacts/run
+      - name: Score answers
+        run: python -m app.evaluation judge artifacts/run --output artifacts/judged --workers 4
+      - name: Compare against published baseline
+        if: inputs.split == 'all'
+        run: python -m app.evaluation compare evals/reports/v1.2.0/candidate artifacts/judged --output artifacts/comparison.json --fail-on-regression --metric semantic_correctness --metric behavior_match_judged --metric evidence_recall_at_k --max-regression 0.05
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rag-quality-${{ github.sha }}
+          path: artifacts/

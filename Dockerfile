@@ -7,6 +7,8 @@ WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY app ./app
 COPY static ./static
+COPY evals/data ./evals/data
+COPY evals/LICENSES.md ./evals/LICENSES.md
 RUN pip install --no-cache-dir .
 
 RUN useradd --create-home appuser && mkdir -p /app/data/uploads && chown -R appuser:appuser /app

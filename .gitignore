@@ -36,3 +36,6 @@ Thumbs.db
 # Versioned evaluation fixtures (not runtime user data)
 !evals/data/
 !evals/data/**
+
+# Local evaluation outputs; release evidence is explicitly tracked under evals/reports
+artifacts/

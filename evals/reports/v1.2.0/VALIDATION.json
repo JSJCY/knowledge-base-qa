@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-20",
+  "timezone": "Asia/Shanghai",
+  "python": "3.13.14",
+  "dependencies": {
+    "fastapi": "0.141.1",
+    "pydantic": "2.13.5",
+    "pydantic-settings": "2.15.0",
+    "numpy": "2.5.3",
+    "sqlalchemy": "2.0.52",
+    "httpx": "0.28.1",
+    "fastembed": "0.8.0",
+    "pytest": "9.1.1",
+    "pytest-cov": "7.1.0",
+    "ruff": "0.16.6"
+  },
+  "functional_tests": {
+    "passed": 88,
+    "coverage_percent": 75,
+    "scope": "app including evaluation modules"
+  },
+  "checks": {
+    "ruff": "passed",
+    "node_syntax": "passed",
+    "dataset_integrity": "passed",
+    "offline_60_case_pipeline": "passed",
+    "real_60_case_generation": "completed",
+    "real_60_case_judging": "completed with retained repair history",
+    "docker_build": "not run: Docker unavailable",
+    "independent_human_calibration": "pending"
+  },
+  "note": "Environment versions recorded after evaluation in the same unchanged Python environment."
+}

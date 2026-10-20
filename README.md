@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/JSJCY/knowledge-base-qa/actions/workflows/ci.yml/badge.svg)](https://github.com/JSJCY/knowledge-base-qa/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://www.python.org/)
-[![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)](#)
+[![Evaluation](https://img.shields.io/badge/RAG-evaluation-blue)](docs/EVALUATION.md)
 [![Release](https://img.shields.io/github/v/release/JSJCY/knowledge-base-qa)](https://github.com/JSJCY/knowledge-base-qa/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
@@ -25,7 +25,7 @@
 - 🖥 **Web 界面**：内置零依赖单页前端，支持流式回答、Markdown（表格 / 公式 / 代码块高亮与复制）、引用来源定位、文档拖拽上传与会话切换
 - ⚙️ **工程化运行**：文档可异步入队处理并查询进度；统一错误格式、请求 ID、可选 API Key 与限流；提供 Docker Compose + Nginx 部署配置
 - 🔌 **可插拔设计**：向量化与 LLM 均为依赖注入；未配置 API Key 时自动降级 Mock 模式，全流程仍可跑通
-- ✅ **工程化**：50 个 pytest 用例、92% 覆盖率、ruff 代码规范、GitHub Actions CI、Swagger 交互文档
+- ✅ **工程化**：pytest 功能回归、独立 RAG 质量评测、ruff 代码规范、GitHub Actions CI、Swagger 交互文档
 
 ## 🏗 工作原理
 
@@ -182,7 +182,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 │   ├── index.html             # 页面结构
 │   ├── style.css              # 界面样式
 │   └── app.js                 # 交互逻辑（上传/问答/检索/会话）
-├── tests/                     # 53 个测试（假向量化器/假 LLM 依赖注入，CI 零外部依赖）
+├── tests/                     # 功能与质量管线测试（CI 使用确定性依赖替身）
 ├── .github/workflows/ci.yml   # CI：ruff lint + pytest + coverage
 ├── pyproject.toml             # 依赖与工具配置
 └── .env.example               # 配置模板
@@ -191,11 +191,11 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 ## 🧪 测试与质量
 
 ```bash
-pytest --cov=app        # 53 个用例，覆盖率 92%
+pytest --cov=app        # 工程测试；覆盖率不代表回答准确率
 ruff check .            # 代码规范
 ```
 
-测试策略：真实向量模型与 DeepSeek API 通过**依赖注入**替换为确定性假实现（词袋假向量器 / 回显假 LLM），因此 CI 无需下载模型、不消耗 API 额度、秒级完成；真实模型链路通过本地端到端验收（中文语义检索命中、多轮追问、库外问题拒答均验证通过）。
+测试策略：真实向量模型与 DeepSeek API 通过**依赖注入**替换为确定性假实现（词袋假向量器 / 回显假 LLM），因此 CI 无需下载模型、不消耗 API 额度、秒级完成；真实模型另行批量评测，保留原始输出、引用和评分理由；当前模型辅助评分尚待独立人工校准。
 
 ## 📖 FAQ
 
@@ -223,3 +223,14 @@ ruff check .            # 代码规范
 ## 📄 License
 
 [MIT](LICENSE) © 2026 JSJCY
+
+## RAG 质量评测（v1.2.0）
+
+固定 60 条样本，覆盖中文、带干扰的多跳问答和项目边界场景。
+支持真实检索评测、标准证据生成诊断、端到端评测、模型辅助语义评分和版本对比。
+回答按事实关联 [S1] 引用，核验通过后展示；SSE 会等待核验完成再发送答案。
+默认额外进行一次模型语义核验，增加延迟与费用；可配置关闭，但关闭后不应声称语义已验证。
+
+详见 [评测与维护指南](docs/EVALUATION.md)、
+[数据来源与许可](evals/LICENSES.md) 和 [本次发布报告](evals/reports/v1.2.0/RESULTS.md)。
+功能测试通过、模型评分、独立人工验收是不同证据，不应混写为回答准确率。

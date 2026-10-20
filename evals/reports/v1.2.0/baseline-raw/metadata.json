@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-20T04:40:57.316592+00:00",
+  "commit": "unknown",
+  "task": "e2e",
+  "embedding": "real",
+  "embedding_model": "BAAI/bge-small-zh-v1.5",
+  "llm": "real",
+  "model": "deepseek-chat",
+  "corpus_sha256": "fbebf35791e5ae88318956f9aaa545763036cfbc99e6fef63df2012a0e1b226d",
+  "cases_sha256": "42370328d93b96421ad8e6f4f3bf751a972650e077f059d653d7c22dc1b0cd9a",
+  "prompt_sha256": "0ba6e832419c85ba282d488a329b63e12dae52c1a9169193e454a45556134459",
+  "settings": {
+    "chunk_size": 500,
+    "chunk_overlap": 50,
+    "llm_temperature": 0.3,
+    "rag_min_relevance_score": 0.15,
+    "rag_vector_weight": 0.7,
+    "rag_keyword_weight": 0.3,
+    "rag_candidate_multiplier": 3,
+    "rag_history_limit": 10,
+    "rag_history_char_budget": 6000,
+    "rag_query_rewrite_enabled": false
+  },
+  "top_k": 5,
+  "split": "all",
+  "workers": 4,
+  "retrieval_scope": "XQuAD:20 selected paragraphs; HotpotQA:10 supplied distractor paragraphs; project:fixture scope"
+}

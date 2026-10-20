@@ -1,0 +1,1771 @@
+{
+  "metadata": {
+    "schema_version": 1,
+    "created_at": "2026-10-20T04:40:57.316592+00:00",
+    "commit": "unknown",
+    "task": "e2e",
+    "embedding": "real",
+    "embedding_model": "BAAI/bge-small-zh-v1.5",
+    "llm": "real",
+    "model": "deepseek-chat",
+    "corpus_sha256": "e1f672ac78c75338d0f2f58f3cc62f9765027dcd213cbb11ac9d6608c7264878",
+    "cases_sha256": "4144618705ad2d696f12973cf3ba7bb6e1008c841a9ca109a07c1b3a6add5878",
+    "prompt_sha256": "0ba6e832419c85ba282d488a329b63e12dae52c1a9169193e454a45556134459",
+    "settings": {
+      "chunk_size": 500,
+      "chunk_overlap": 50,
+      "llm_temperature": 0.3,
+      "rag_min_relevance_score": 0.15,
+      "rag_vector_weight": 0.7,
+      "rag_keyword_weight": 0.3,
+      "rag_candidate_multiplier": 3,
+      "rag_history_limit": 10,
+      "rag_history_char_budget": 6000,
+      "rag_query_rewrite_enabled": false
+    },
+    "top_k": 5,
+    "split": "all",
+    "workers": 4,
+    "retrieval_scope": "XQuAD:20 selected paragraphs; HotpotQA:10 supplied distractor paragraphs; project:fixture scope",
+    "judge_model": "deepseek-chat",
+    "judge_temperature": 0,
+    "judge_rubric_sha256": "edd4110aa102ef25d1b8be10f5a62450dcaa5efee657962f7431f3f12ae624b5",
+    "metrics_sha256": "69bab09f27ef8e52fd9c12b54bce05caf001afeeac0f413358a3c57372e68f3a",
+    "derived_from": ".tmp\\eval-baseline-scored",
+    "judgement_boundary": "Model-assisted, same-provider unless configured otherwise; pending human calibration",
+    "line_ending_normalization": {
+      "change": "CRLF to LF only; case/document JSON values unchanged",
+      "original_corpus_sha256": "fbebf35791e5ae88318956f9aaa545763036cfbc99e6fef63df2012a0e1b226d",
+      "original_cases_sha256": "42370328d93b96421ad8e6f4f3bf751a972650e077f059d653d7c22dc1b0cd9a"
+    }
+  },
+  "total": 60,
+  "errors": 0,
+  "metrics": {
+    "answer_token_f1": {
+      "mean": 0.31101330804708166,
+      "n": 54
+    },
+    "behavior_match_heuristic": {
+      "mean": 0.8833333333333333,
+      "n": 60
+    },
+    "behavior_match_judged": {
+      "mean": 0.8166666666666667,
+      "n": 60
+    },
+    "citation_coverage": {
+      "mean": 0.0,
+      "n": 56
+    },
+    "completeness": {
+      "mean": 0.8166666666666667,
+      "n": 60
+    },
+    "context_precision_at_k": {
+      "mean": 0.24753086419753087,
+      "n": 54
+    },
+    "contradiction_rate": {
+      "mean": 0.11011904761904763,
+      "n": 56
+    },
+    "evidence_recall_at_k": {
+      "mean": 0.8333333333333334,
+      "n": 54
+    },
+    "faithfulness": {
+      "mean": 0.8630952380952381,
+      "n": 56
+    },
+    "forbidden_fact_count": {
+      "mean": 0.0,
+      "n": 60
+    },
+    "inappropriate_answer": {
+      "mean": 0.0,
+      "n": 5
+    },
+    "inappropriate_refusal": {
+      "mean": 0.1111111111111111,
+      "n": 54
+    },
+    "mrr": {
+      "mean": 0.8194444444444444,
+      "n": 54
+    },
+    "required_fact_coverage": {
+      "mean": 0.7962962962962963,
+      "n": 54
+    },
+    "semantic_correctness": {
+      "mean": 0.825,
+      "n": 60
+    },
+    "unsupported_claim_rate": {
+      "mean": 0.026785714285714284,
+      "n": 56
+    }
+  },
+  "slices": {
+    "dataset": {
+      "hotpotqa": {
+        "answer_token_f1": {
+          "mean": 0.24057142857142857,
+          "n": 20
+        },
+        "behavior_match_heuristic": {
+          "mean": 0.8,
+          "n": 20
+        },
+        "behavior_match_judged": {
+          "mean": 0.6,
+          "n": 20
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 20
+        },
+        "completeness": {
+          "mean": 0.6,
+          "n": 20
+        },
+        "context_precision_at_k": {
+          "mean": 0.23500000000000001,
+          "n": 20
+        },
+        "contradiction_rate": {
+          "mean": 0.24166666666666664,
+          "n": 20
+        },
+        "evidence_recall_at_k": {
+          "mean": 0.55,
+          "n": 20
+        },
+        "faithfulness": {
+          "mean": 0.7083333333333333,
+          "n": 20
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 20
+        },
+        "inappropriate_refusal": {
+          "mean": 0.2,
+          "n": 20
+        },
+        "mrr": {
+          "mean": 0.6625,
+          "n": 20
+        },
+        "required_fact_coverage": {
+          "mean": 0.55,
+          "n": 20
+        },
+        "semantic_correctness": {
+          "mean": 0.6,
+          "n": 20
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.05,
+          "n": 20
+        }
+      },
+      "project": {
+        "answer_token_f1": {
+          "mean": 0.3956027269827089,
+          "n": 14
+        },
+        "behavior_match_heuristic": {
+          "mean": 0.95,
+          "n": 20
+        },
+        "behavior_match_judged": {
+          "mean": 0.95,
+          "n": 20
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 16
+        },
+        "completeness": {
+          "mean": 0.95,
+          "n": 20
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 14
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 16
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 14
+        },
+        "faithfulness": {
+          "mean": 0.96875,
+          "n": 16
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 20
+        },
+        "inappropriate_answer": {
+          "mean": 0.0,
+          "n": 5
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 14
+        },
+        "mrr": {
+          "mean": 0.7857142857142857,
+          "n": 14
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 14
+        },
+        "semantic_correctness": {
+          "mean": 0.975,
+          "n": 20
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.03125,
+          "n": 16
+        }
+      },
+      "xquad_zh": {
+        "answer_token_f1": {
+          "mean": 0.3222425942677957,
+          "n": 20
+        },
+        "behavior_match_heuristic": {
+          "mean": 0.9,
+          "n": 20
+        },
+        "behavior_match_judged": {
+          "mean": 0.9,
+          "n": 20
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 20
+        },
+        "completeness": {
+          "mean": 0.9,
+          "n": 20
+        },
+        "context_precision_at_k": {
+          "mean": 0.2,
+          "n": 20
+        },
+        "contradiction_rate": {
+          "mean": 0.06666666666666667,
+          "n": 20
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 20
+        },
+        "faithfulness": {
+          "mean": 0.9333333333333333,
+          "n": 20
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 20
+        },
+        "inappropriate_refusal": {
+          "mean": 0.1,
+          "n": 20
+        },
+        "mrr": {
+          "mean": 1.0,
+          "n": 20
+        },
+        "required_fact_coverage": {
+          "mean": 0.9,
+          "n": 20
+        },
+        "semantic_correctness": {
+          "mean": 0.9,
+          "n": 20
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 20
+        }
+      }
+    },
+    "language": {
+      "en": {
+        "answer_token_f1": {
+          "mean": 0.24057142857142857,
+          "n": 20
+        },
+        "behavior_match_heuristic": {
+          "mean": 0.8,
+          "n": 20
+        },
+        "behavior_match_judged": {
+          "mean": 0.6,
+          "n": 20
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 20
+        },
+        "completeness": {
+          "mean": 0.6,
+          "n": 20
+        },
+        "context_precision_at_k": {
+          "mean": 0.23500000000000001,
+          "n": 20
+        },
+        "contradiction_rate": {
+          "mean": 0.24166666666666664,
+          "n": 20
+        },
+        "evidence_recall_at_k": {
+          "mean": 0.55,
+          "n": 20
+        },
+        "faithfulness": {
+          "mean": 0.7083333333333333,
+          "n": 20
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 20
+        },
+        "inappropriate_refusal": {
+          "mean": 0.2,
+          "n": 20
+        },
+        "mrr": {
+          "mean": 0.6625,
+          "n": 20
+        },
+        "required_fact_coverage": {
+          "mean": 0.55,
+          "n": 20
+        },
+        "semantic_correctness": {
+          "mean": 0.6,
+          "n": 20
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.05,
+          "n": 20
+        }
+      },
+      "zh": {
+        "answer_token_f1": {
+          "mean": 0.35244970773864237,
+          "n": 34
+        },
+        "behavior_match_heuristic": {
+          "mean": 0.925,
+          "n": 40
+        },
+        "behavior_match_judged": {
+          "mean": 0.925,
+          "n": 40
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 36
+        },
+        "completeness": {
+          "mean": 0.925,
+          "n": 40
+        },
+        "context_precision_at_k": {
+          "mean": 0.2549019607843137,
+          "n": 34
+        },
+        "contradiction_rate": {
+          "mean": 0.037037037037037035,
+          "n": 36
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 34
+        },
+        "faithfulness": {
+          "mean": 0.949074074074074,
+          "n": 36
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 40
+        },
+        "inappropriate_answer": {
+          "mean": 0.0,
+          "n": 5
+        },
+        "inappropriate_refusal": {
+          "mean": 0.058823529411764705,
+          "n": 34
+        },
+        "mrr": {
+          "mean": 0.9117647058823529,
+          "n": 34
+        },
+        "required_fact_coverage": {
+          "mean": 0.9411764705882353,
+          "n": 34
+        },
+        "semantic_correctness": {
+          "mean": 0.9375,
+          "n": 40
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.013888888888888888,
+          "n": 36
+        }
+      }
+    },
+    "split": {
+      "dev": {
+        "answer_token_f1": {
+          "mean": 0.3161769991628265,
+          "n": 32
+        },
+        "behavior_match_heuristic": {
+          "mean": 0.8648648648648649,
+          "n": 37
+        },
+        "behavior_match_judged": {
+          "mean": 0.7567567567567568,
+          "n": 37
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 34
+        },
+        "completeness": {
+          "mean": 0.7567567567567568,
+          "n": 37
+        },
+        "context_precision_at_k": {
+          "mean": 0.23750000000000002,
+          "n": 32
+        },
+        "contradiction_rate": {
+          "mean": 0.1519607843137255,
+          "n": 34
+        },
+        "evidence_recall_at_k": {
+          "mean": 0.8125,
+          "n": 32
+        },
+        "faithfulness": {
+          "mean": 0.8333333333333333,
+          "n": 34
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 37
+        },
+        "inappropriate_answer": {
+          "mean": 0.0,
+          "n": 4
+        },
+        "inappropriate_refusal": {
+          "mean": 0.125,
+          "n": 32
+        },
+        "mrr": {
+          "mean": 0.8046875,
+          "n": 32
+        },
+        "required_fact_coverage": {
+          "mean": 0.71875,
+          "n": 32
+        },
+        "semantic_correctness": {
+          "mean": 0.7702702702702703,
+          "n": 37
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.014705882352941176,
+          "n": 34
+        }
+      },
+      "holdout": {
+        "answer_token_f1": {
+          "mean": 0.3035024846059983,
+          "n": 22
+        },
+        "behavior_match_heuristic": {
+          "mean": 0.9130434782608695,
+          "n": 23
+        },
+        "behavior_match_judged": {
+          "mean": 0.9130434782608695,
+          "n": 23
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 22
+        },
+        "completeness": {
+          "mean": 0.9130434782608695,
+          "n": 23
+        },
+        "context_precision_at_k": {
+          "mean": 0.26212121212121214,
+          "n": 22
+        },
+        "contradiction_rate": {
+          "mean": 0.045454545454545456,
+          "n": 22
+        },
+        "evidence_recall_at_k": {
+          "mean": 0.8636363636363636,
+          "n": 22
+        },
+        "faithfulness": {
+          "mean": 0.9090909090909091,
+          "n": 22
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 23
+        },
+        "inappropriate_answer": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.09090909090909091,
+          "n": 22
+        },
+        "mrr": {
+          "mean": 0.8409090909090909,
+          "n": 22
+        },
+        "required_fact_coverage": {
+          "mean": 0.9090909090909091,
+          "n": 22
+        },
+        "semantic_correctness": {
+          "mean": 0.9130434782608695,
+          "n": 23
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.045454545454545456,
+          "n": 22
+        }
+      }
+    },
+    "scenario": {
+      "answerable": {
+        "answer_token_f1": {
+          "mean": 0.3222425942677957,
+          "n": 20
+        },
+        "behavior_match_heuristic": {
+          "mean": 0.9,
+          "n": 20
+        },
+        "behavior_match_judged": {
+          "mean": 0.9,
+          "n": 20
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 20
+        },
+        "completeness": {
+          "mean": 0.9,
+          "n": 20
+        },
+        "context_precision_at_k": {
+          "mean": 0.2,
+          "n": 20
+        },
+        "contradiction_rate": {
+          "mean": 0.06666666666666667,
+          "n": 20
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 20
+        },
+        "faithfulness": {
+          "mean": 0.9333333333333333,
+          "n": 20
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 20
+        },
+        "inappropriate_refusal": {
+          "mean": 0.1,
+          "n": 20
+        },
+        "mrr": {
+          "mean": 1.0,
+          "n": 20
+        },
+        "required_fact_coverage": {
+          "mean": 0.9,
+          "n": 20
+        },
+        "semantic_correctness": {
+          "mean": 0.9,
+          "n": 20
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 20
+        }
+      },
+      "multihop_distractors": {
+        "answer_token_f1": {
+          "mean": 0.24057142857142857,
+          "n": 20
+        },
+        "behavior_match_heuristic": {
+          "mean": 0.8,
+          "n": 20
+        },
+        "behavior_match_judged": {
+          "mean": 0.6,
+          "n": 20
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 20
+        },
+        "completeness": {
+          "mean": 0.6,
+          "n": 20
+        },
+        "context_precision_at_k": {
+          "mean": 0.23500000000000001,
+          "n": 20
+        },
+        "contradiction_rate": {
+          "mean": 0.24166666666666664,
+          "n": 20
+        },
+        "evidence_recall_at_k": {
+          "mean": 0.55,
+          "n": 20
+        },
+        "faithfulness": {
+          "mean": 0.7083333333333333,
+          "n": 20
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 20
+        },
+        "inappropriate_refusal": {
+          "mean": 0.2,
+          "n": 20
+        },
+        "mrr": {
+          "mean": 0.6625,
+          "n": 20
+        },
+        "required_fact_coverage": {
+          "mean": 0.55,
+          "n": 20
+        },
+        "semantic_correctness": {
+          "mean": 0.6,
+          "n": 20
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.05,
+          "n": 20
+        }
+      },
+      "价格": {
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_answer": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "发布日期": {
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_answer": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        }
+      },
+      "启动": {
+        "answer_token_f1": {
+          "mean": 0.6153846153846153,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "存储": {
+        "answer_token_f1": {
+          "mean": 0.4210526315789474,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 0.5,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "容量": {
+        "answer_token_f1": {
+          "mean": 0.25,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 0.5,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "干扰": {
+        "answer_token_f1": {
+          "mean": 0.20689655172413793,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 0.5,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "库外": {
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_answer": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        }
+      },
+      "扫描": {
+        "answer_token_f1": {
+          "mean": 0.45161290322580644,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "指代": {
+        "answer_token_f1": {
+          "mean": 0.25,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 0.5,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "换题": {
+        "answer_token_f1": {
+          "mean": 0.4444444444444445,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "格式": {
+        "answer_token_f1": {
+          "mean": 0.5,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "歧义": {
+        "behavior_match_heuristic": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 0.5,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 0.5,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.5,
+          "n": 1
+        }
+      },
+      "比例": {
+        "answer_token_f1": {
+          "mean": 0.33333333333333337,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "水温": {
+        "answer_token_f1": {
+          "mean": 0.3076923076923077,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "空库": {
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_answer": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        }
+      },
+      "空库追问": {
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_answer": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        }
+      },
+      "纠错": {
+        "answer_token_f1": {
+          "mean": 0.6666666666666666,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 0.5,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "语言": {
+        "answer_token_f1": {
+          "mean": 0.25,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 0.5,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "部分": {
+        "answer_token_f1": {
+          "mean": 0.6060606060606061,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      },
+      "限流": {
+        "answer_token_f1": {
+          "mean": 0.23529411764705882,
+          "n": 1
+        },
+        "behavior_match_heuristic": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "behavior_match_judged": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "citation_coverage": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "completeness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "context_precision_at_k": {
+          "mean": 0.3333333333333333,
+          "n": 1
+        },
+        "contradiction_rate": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "evidence_recall_at_k": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "faithfulness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "forbidden_fact_count": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "inappropriate_refusal": {
+          "mean": 0.0,
+          "n": 1
+        },
+        "mrr": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "required_fact_coverage": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "semantic_correctness": {
+          "mean": 1.0,
+          "n": 1
+        },
+        "unsupported_claim_rate": {
+          "mean": 0.0,
+          "n": 1
+        }
+      }
+    }
+  },
+  "failures": [
+    "xquad-57302bd0b2c2fd14005689dc",
+    "hotpot-5ac3165c5542995ef918c10a",
+    "hotpot-5a85b2d95542997b5ce40028",
+    "xquad-571cbe35dd7acb1400e4c13d",
+    "hotpot-5ae33c4d5542992f92d82262",
+    "hotpot-5ae32e125542991a06ce9946",
+    "hotpot-5a74106b55429979e288289e",
+    "hotpot-5ae7e1fc55429952e35ea9cc",
+    "hotpot-5ae6050f55429929b0807a5e",
+    "hotpot-5adc53f75542996e6852530a",
+    "hotpot-5abd94525542992ac4f382d2",
+    "hotpot-5a713ea95542994082a3e6e4",
+    "hotpot-5ab3b0bf5542992ade7c6e39",
+    "hotpot-5ae22b8d554299234fd0440f",
+    "hotpot-5ae005b555429942ec259bec",
+    "project-20",
+    "hotpot-5adf37a95542995ec70e8f97"
+  ],
+  "latency_seconds": {
+    "mean": 0.7383876216666597,
+    "p50": 0.7239080999997896,
+    "p95": 1.0889545999998518,
+    "n": 60
+  }
+}

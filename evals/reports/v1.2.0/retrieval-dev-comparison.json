@@ -1,0 +1,11 @@
+{
+  "baseline": ".tmp\\retrieval-dev-overlap",
+  "candidate": ".tmp\\retrieval-dev-idf",
+  "metric_deltas": {
+    "context_precision_at_k": 0.012499999999999983,
+    "evidence_recall_at_k": 0.02083333333333337,
+    "mrr": 0.03229166666666672
+  },
+  "errors_delta": 0,
+  "note": "Positive deltas are not always improvements: forbidden_fact_count is lower-is-better."
+}

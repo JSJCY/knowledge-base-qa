@@ -1,0 +1,11 @@
+{
+  "baseline": ".tmp\\retrieval-holdout-overlap",
+  "candidate": ".tmp\\retrieval-holdout-idf",
+  "metric_deltas": {
+    "context_precision_at_k": 0.027272727272727282,
+    "evidence_recall_at_k": 0.06060606060606055,
+    "mrr": 0.03409090909090906
+  },
+  "errors_delta": 0,
+  "note": "Positive deltas are not always improvements: forbidden_fact_count is lower-is-better."
+}
