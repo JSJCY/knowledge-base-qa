@@ -1,5 +1,6 @@
 """RAG 问答编排：检索 → 组装提示词 → 调用 LLM → 持久化会话。"""
 
+import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 
@@ -38,6 +39,7 @@ class QAPreparation:
     messages: list[dict[str, str]]
     citations: list[RetrievedChunk]
     conversation: Conversation
+    retrieval_query: str = ""
 
 
 def compact_history(history: list[Message], char_budget: int) -> tuple[str, list[Message]]:
@@ -78,12 +80,19 @@ def rewrite_query(question: str, history: list[Message], llm: LLMService) -> str
     return rewritten[:500] if rewritten else question
 
 
+def contextual_query(question: str, history: list[Message]) -> str:
+    """Resolve a short follow-up using user questions, never old assistant claims."""
+    if not re.search(r"^(那|它|他|她|这(?:个|项)|其|what about|and |does it|how about)", question.strip(), re.I):
+        return question
+    previous = [m.content for m in history if m.role == "user"]
+    if not previous:
+        return question
+    return f"{previous[-1][:500]}\n{question}"
+
+
 def should_refuse(preparation: QAPreparation, min_relevance_score: float) -> bool:
-    """首轮低相关问题直接拒答；追问则交由模型结合会话上下文判断。"""
-    is_follow_up = len(preparation.messages) > 2
-    return not is_follow_up and (
-        not preparation.citations or preparation.citations[0].score < min_relevance_score
-    )
+    """Apply the same evidence boundary on every turn."""
+    return not preparation.citations or max(r.score for r in preparation.citations) < min_relevance_score
 
 
 def prepare_question(
@@ -118,7 +127,7 @@ def prepare_question(
     retrieval_query = (
         rewrite_query(question, history, llm)
         if query_rewrite_enabled and llm is not None
-        else question
+        else contextual_query(question, history)
     )
     query_vector = embedder.embed([retrieval_query])[0]
     results = search_chunks(
@@ -129,6 +138,7 @@ def prepare_question(
         candidate_multiplier=candidate_multiplier,
         vector_weight=vector_weight,
         keyword_weight=keyword_weight,
+        owner_id=owner_id,
     )
     system_content = SYSTEM_PROMPT_TEMPLATE.format(context=build_context(results))
     if summary:
@@ -136,7 +146,7 @@ def prepare_question(
     messages = [{"role": "system", "content": system_content}]
     messages.extend({"role": m.role, "content": m.content} for m in history)
     messages.append({"role": "user", "content": question})
-    return QAPreparation(messages, results, conversation)
+    return QAPreparation(messages, results, conversation, retrieval_query)
 
 
 def persist_answer(db: Session, preparation: QAPreparation, question: str, answer: str) -> None:
@@ -206,6 +216,7 @@ def answer_question(
         owner_id=owner_id,
     )
     if should_refuse(preparation, min_relevance_score):
+        preparation.citations = []
         answer = "知识库中未找到足够相关的信息，暂时无法可靠回答这个问题。"
         persist_answer(db, preparation, question, answer)
         return QAResult(
@@ -246,6 +257,7 @@ def stream_answer_question(
         llm=llm,
     )
     if should_refuse(preparation, kwargs["min_relevance_score"]):
+        preparation.citations = []
         answer = "知识库中未找到足够相关的信息，暂时无法可靠回答这个问题。"
         yield answer, preparation
         persist_answer(db, preparation, kwargs["question"], answer)

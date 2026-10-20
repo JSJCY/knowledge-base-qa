@@ -175,7 +175,7 @@ def run(args):
                           vector_weight=settings.rag_vector_weight,keyword_weight=settings.rag_keyword_weight)
             preparation = prepare_question(db,LockedEmbedding(),llm=trace,**kwargs)
             retrieved = preparation.citations
-            row["retrieval_query"] = preparation.messages[-1]["content"]
+            row["retrieval_query"] = getattr(preparation,"retrieval_query",case.question)
             if args.task == "retrieval":
                 answer,citations = "",[]
             elif args.task == "oracle":

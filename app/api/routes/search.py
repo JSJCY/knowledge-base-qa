@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.db import get_db
+from app.models.user import User
 from app.schemas.search import SearchRequest, SearchResponse, SearchResultOut
+from app.services.auth import current_user
 from app.services.embedding import EmbeddingService, get_embedding_service
 from app.services.retrieval import search_chunks
 
@@ -17,6 +19,7 @@ def search(
     request: SearchRequest,
     db: Session = Depends(get_db),
     embedder: EmbeddingService = Depends(get_embedding_service),
+    user: User | None = Depends(current_user),
 ) -> SearchResponse:
     try:
         query_vector = embedder.embed([request.query])[0]
@@ -29,6 +32,7 @@ def search(
         top_k=request.top_k,
         document_id=request.document_id,
         keyword_query=request.query,
+        owner_id=user.id if user else None,
         candidate_multiplier=get_settings().rag_candidate_multiplier,
         vector_weight=get_settings().rag_vector_weight,
         keyword_weight=get_settings().rag_keyword_weight,

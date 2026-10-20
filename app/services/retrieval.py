@@ -47,12 +47,14 @@ def search_chunks(
     candidate_multiplier: int = 3,
     vector_weight: float = 0.7,
     keyword_weight: float = 0.3,
+    owner_id: int | None = None,
 ) -> list[RetrievedChunk]:
     """混合召回并重排序：向量语义 + 关键词命中（跳过未向量化切块）。"""
     stmt = (
         select(Chunk, Document)
         .join(Document, Chunk.document_id == Document.id)
-        .where(Chunk.embedding.is_not(None))
+        .where(Chunk.embedding.is_not(None), Document.deleted_at.is_(None))
+        .where(Document.owner_id.is_(None) if owner_id is None else Document.owner_id == owner_id)
     )
     if document_id is not None:
         stmt = stmt.where(Chunk.document_id == document_id)

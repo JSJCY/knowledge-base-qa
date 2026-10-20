@@ -79,26 +79,26 @@ def test_compact_history_keeps_recent_messages_and_summarizes_older_ones():
 
 def test_chat_conversation_continuity(client, fake_llm):
     _upload_kb(client)
-    first = client.post("/api/v1/chat", json={"question": "第一个问题"}).json()
+    first = client.post("/api/v1/chat", json={"question": "FastAPI 是什么框架？"}).json()
     conv_id = first["conversation_id"]
 
     second = client.post(
         "/api/v1/chat",
-        json={"question": "第二个问题", "conversation_id": conv_id},
+        json={"question": "那它能做什么？", "conversation_id": conv_id},
     ).json()
     assert second["conversation_id"] == conv_id
 
     # 第二轮 LLM 输入 = system + 第一轮 user + 第一轮 assistant + 本轮 user
     roles = [m["role"] for m in fake_llm.last_messages]
     assert roles == ["system", "user", "assistant", "user"]
-    assert fake_llm.last_messages[1]["content"] == "第一个问题"
-    assert fake_llm.last_messages[3]["content"] == "第二个问题"
+    assert fake_llm.last_messages[1]["content"] == "FastAPI 是什么框架？"
+    assert fake_llm.last_messages[3]["content"] == "那它能做什么？"
 
     detail = client.get(f"/api/v1/conversations/{conv_id}")
     assert detail.status_code == 200
     body = detail.json()
     assert body["message_count"] == 4
-    assert body["title"] == "第一个问题"
+    assert body["title"] == "FastAPI 是什么框架？"
     assert [m["role"] for m in body["messages"]] == ["user", "assistant", "user", "assistant"]
     # assistant 消息带引用
     assert body["messages"][1]["citations"][0]["document_filename"] == "kb.txt"
@@ -127,3 +127,27 @@ def test_conversation_list_and_delete(client):
     assert len(client.get("/api/v1/conversations").json()) == 1
     assert client.get(f"/api/v1/conversations/{target}").status_code == 404
     assert client.delete(f"/api/v1/conversations/{target}").status_code == 404
+
+def test_empty_kb_follow_up_also_refuses_without_model(client, fake_llm):
+    first=client.post("/api/v1/chat",json={"question":"什么是星河？"}).json()
+    second=client.post("/api/v1/chat",json={"question":"那它的上传上限呢？","conversation_id":first["conversation_id"]}).json()
+    assert "未找到足够相关" in second["answer"]
+    assert second["citations"] == []
+    assert fake_llm.last_messages is None
+
+
+def test_unrelated_follow_up_does_not_bypass_relevance(client, fake_llm):
+    _upload_kb(client)
+    first=client.post("/api/v1/chat",json={"question":"FastAPI 是什么框架？"}).json()
+    before=fake_llm.last_messages
+    second=client.post("/api/v1/chat",json={"question":"量子纠缠如何实现？","conversation_id":first["conversation_id"]}).json()
+    assert "未找到足够相关" in second["answer"]
+    assert second["citations"] == []
+    assert fake_llm.last_messages == before
+
+
+def test_stream_empty_follow_up_obeys_same_boundary(client, fake_llm):
+    first=client.post("/api/v1/chat",json={"question":"什么是星河？"}).json()
+    result=client.post("/api/v1/chat/stream",json={"question":"那它呢？","conversation_id":first["conversation_id"]})
+    assert "未找到足够相关" in result.text
+    assert fake_llm.last_messages is None
