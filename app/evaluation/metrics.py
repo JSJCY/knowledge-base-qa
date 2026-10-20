@@ -2,8 +2,8 @@
 import re
 from collections import Counter
 
-REFUSAL = re.compile(r"未找到|未提供|资料不足|无法可靠|没有.*(?:资料|信息)|cannot (?:answer|reliably)|not (?:enough|provided)|insufficient", re.I)
-CLARIFY = re.compile(r"请(?:说明|明确| уточ)|哪个|哪种|clarify|which (?:product|limit)", re.I)
+REFUSAL = re.compile(r"未找到|未提供|没有提供|资料不足|无法可靠|没有.*(?:资料|信息)|cannot (?:answer|reliably)|not (?:enough|provided)|insufficient", re.I)
+CLARIFY = re.compile(r"请(?:说明|明确)|哪个|哪种|clarify|which (?:product|limit)", re.I)
 CITE = re.compile(r"\[S(\d+)\]")
 
 

@@ -21,13 +21,14 @@ from app.evaluation.metrics import score
 from app.models.chat import Conversation, Message
 from app.models.document import Chunk, Document
 from app.services.chunking import split_text
+from app.services.grounding import INSTRUCTIONS, check_claims
 from app.services.embedding import EmbeddingService, vec_to_bytes
 from app.services.llm import MockLLMService, get_llm_service
 from app.services.rag import (
     SYSTEM_PROMPT_TEMPLATE,
-    answer_question,
     build_context,
     citation_dicts,
+    complete_preparation,
     prepare_question,
 )
 from app.services.retrieval import RetrievedChunk
@@ -124,7 +125,7 @@ def run(args):
             with lock:
                 return embedder.embed(texts)
     try:
-        commit = subprocess.check_output(["git","rev-parse","HEAD"],text=True,stderr=subprocess.DEVNULL).strip()
+        commit = subprocess.check_output(["git","-c",f"safe.directory={Path.cwd().as_posix()}","rev-parse","HEAD"],text=True,stderr=subprocess.DEVNULL).strip()
     except (subprocess.CalledProcessError,FileNotFoundError):
         commit = "unknown"
     metadata = dict(schema_version=1, created_at=datetime.now(UTC).isoformat(),commit=commit,task=args.task,
@@ -134,8 +135,12 @@ def run(args):
                     prompt_sha256=hashlib.sha256(SYSTEM_PROMPT_TEMPLATE.encode()).hexdigest(),
                     settings={name:getattr(settings,name) for name in ["chunk_size","chunk_overlap","llm_temperature",
                               "rag_min_relevance_score","rag_vector_weight","rag_keyword_weight","rag_candidate_multiplier",
-                              "rag_history_limit","rag_history_char_budget","rag_query_rewrite_enabled"]},
+                              "rag_history_limit","rag_history_char_budget","rag_query_rewrite_enabled",
+                              "rag_grounded_output_enabled","rag_verify_claims_enabled"]},
                     top_k=args.top_k,split=args.split,workers=args.workers,
+                    grounding_prompt_sha256=hashlib.sha256(INSTRUCTIONS.encode()).hexdigest(),
+                    verifier_sha256=hashlib.sha256(__import__("inspect").getsource(check_claims).encode()).hexdigest(),
+                    runtime_files_sha256={str(p):digest(p) for p in sorted(Path("app").rglob("*.py"))},
                     retrieval_scope="XQuAD:20 selected paragraphs; HotpotQA:10 supplied distractor paragraphs; project:fixture scope")
     (args.output/"metadata.json").write_text(json.dumps(metadata,indent=2)+"\n",encoding="utf-8")
 
@@ -174,7 +179,7 @@ def run(args):
                           candidate_multiplier=settings.rag_candidate_multiplier,
                           vector_weight=settings.rag_vector_weight,keyword_weight=settings.rag_keyword_weight)
             preparation = prepare_question(db,LockedEmbedding(),llm=trace,**kwargs)
-            retrieved = preparation.citations
+            retrieved = list(preparation.citations)
             row["retrieval_query"] = getattr(preparation,"retrieval_query",case.question)
             if args.task == "retrieval":
                 answer,citations = "",[]
@@ -185,15 +190,14 @@ def run(args):
                 gold = [RetrievedChunk(db.get(Chunk,key),db.get(Document,mappings[key]["document_id"]),1.0) for key in sorted(gold_ids)]
                 preparation.citations = gold
                 preparation.messages[0]["content"] = SYSTEM_PROMPT_TEMPLATE.format(context=build_context(gold))
-                answer = trace.chat(preparation.messages)
+                answer = complete_preparation(preparation,trace,0)
                 citations = citation_dicts(gold)
                 retrieved = gold
             else:
-                result = answer_question(db,LockedEmbedding(),trace,min_relevance_score=settings.rag_min_relevance_score,**kwargs)
-                answer,citations = result.answer,citation_dicts(result.citations)
-                retrieved = result.citations
+                answer=complete_preparation(preparation,trace,settings.rag_min_relevance_score)
+                citations=citation_dicts(preparation.citations)
             contexts = [{**mappings[r.chunk.id],"score":r.score} for r in retrieved]
-            row.update(answer=answer,citations=citations,retrieved=contexts,llm_calls=trace.calls)
+            row.update(answer=answer,citations=citations,retrieved=contexts,llm_calls=trace.calls,quality=preparation.quality)
             row["scores"] = score(case,answer,contexts,citations)
             if args.task == "retrieval":
                 row["scores"] = {k:v for k,v in row["scores"].items() if k in {
@@ -228,6 +232,9 @@ def compare(args):
            for p in [args.baseline,args.candidate]]
     if ids[0] != ids[1]:
         raise ValueError("Incomparable case sets")
+    for key in ["judge_model","judge_rubric_sha256","metrics_sha256"]:
+        if old["metadata"].get(key)!=new["metadata"].get(key):
+            raise ValueError(f"Incomparable scoring protocol: {key}")
     deltas={k:new["metrics"][k]["mean"]-v["mean"] for k,v in old["metrics"].items()
             if k in new["metrics"] and v["n"]==new["metrics"][k]["n"]}
     report=dict(baseline=str(args.baseline),candidate=str(args.candidate),metric_deltas=deltas,
@@ -236,6 +243,11 @@ def compare(args):
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(report,indent=2))
+    if args.fail_on_regression:
+        for metric in args.metric:
+            if metric not in deltas:
+                raise ValueError(f"Cannot gate unevaluated or differently sized metric: {metric}")
+        return int(report["errors_delta"]>0 or any(deltas[m] < -args.max_regression for m in args.metric))
     return 0
 
 
@@ -257,7 +269,22 @@ def main():
     diff.add_argument("baseline",type=Path)
     diff.add_argument("candidate",type=Path)
     diff.add_argument("--output",type=Path,required=True)
+    diff.add_argument("--fail-on-regression",action="store_true")
+    diff.add_argument("--metric",action="append",default=[])
+    diff.add_argument("--max-regression",type=float,default=0)
+    judge_parser=subs.add_parser("judge")
+    judge_parser.add_argument("input",type=Path)
+    judge_parser.add_argument("--output",type=Path,required=True)
+    judge_parser.add_argument("--model")
+    judge_parser.add_argument("--workers",type=int,default=4)
     args=parser.parse_args()
+    if args.command=="judge":
+        from app.evaluation.judge import judge_run
+        if args.workers<1:
+            parser.error("workers must be positive")
+        return judge_run(args)
+    if args.command=="compare" and args.max_regression<0:
+        parser.error("max-regression cannot be negative")
     if args.command=="run" and (args.top_k<1 or args.workers<1 or (args.limit is not None and args.limit<1)):
         parser.error("top-k, workers and limit must be positive")
     return run(args) if args.command=="run" else compare(args)
