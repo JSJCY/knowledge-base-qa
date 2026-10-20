@@ -43,6 +43,7 @@ def db_session():
     finally:
         session.close()
         Base.metadata.drop_all(engine)
+        engine.dispose()
 
 
 @pytest.fixture()
@@ -65,4 +66,6 @@ def client(db_session, fake_embedder, fake_llm) -> TestClient:
     application.dependency_overrides[get_db] = override_get_db
     application.dependency_overrides[get_embedding_service] = lambda: fake_embedder
     application.dependency_overrides[get_llm_service] = lambda: fake_llm
-    return TestClient(application)
+    test_client=TestClient(application)
+    yield test_client
+    test_client.close()

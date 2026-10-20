@@ -84,7 +84,14 @@ def write_summary(output, metadata, rows):
     summary = dict(metadata=metadata, total=len(rows), errors=sum(r["status"] != "ok" for r in rows),
                    metrics=mean_metrics(rows), slices=groups,
                    failures=[r["id"] for r in rows if r["status"] != "ok" or r.get("scores",{}).get("forbidden_fact_count",0)>0
-                             or r.get("scores",{}).get("behavior_match_heuristic",1)==0])
+                             or r.get("scores",{}).get("behavior_match_heuristic",1)==0
+                             or any(r.get("scores",{}).get(key) is not None and r["scores"][key]<1
+                                    for key in ["semantic_correctness","completeness","faithfulness",
+                                                "citation_support","behavior_match_judged","evidence_recall_at_k"])])
+    times=sorted(r["latency_seconds"] for r in rows if "latency_seconds" in r)
+    if times:
+        summary["latency_seconds"]={"mean":sum(times)/len(times),"p50":times[len(times)//2],
+                                    "p95":times[min(len(times)-1,int(len(times)*0.95))],"n":len(times)}
     (output/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     lines = ["# RAG evaluation", "", f"- Task: {metadata['task']}",
              f"- Embedding: {metadata['embedding']}; LLM: {metadata['llm']}",
@@ -226,7 +233,7 @@ def run(args):
 
 def compare(args):
     old,new = [json.loads((p/"summary.json").read_text(encoding="utf-8")) for p in [args.baseline,args.candidate]]
-    for key in ["corpus_sha256","cases_sha256","task","split"]:
+    for key in ["corpus_sha256","cases_sha256","task","split","embedding","llm"]:
         if old["metadata"][key] != new["metadata"][key]:
             raise ValueError(f"Incomparable runs: {key}")
     ids = [{json.loads(line)["id"] for line in (p/"cases.jsonl").read_text(encoding="utf-8").splitlines()}

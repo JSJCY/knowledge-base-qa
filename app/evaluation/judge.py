@@ -125,8 +125,14 @@ def judge_run(args):
                     reparsed_without_new_model_call=True,
                     ignored_top_level_fields=sorted(set(parsed)-Verdict.model_fields.keys()))
                 return row
-            except (ValueError,KeyError,TypeError):
-                pass
+            except (ValueError,KeyError,TypeError) as exc:
+                messages=messages+[
+                    {"role":"assistant","content":previous["raw_output"]},
+                    {"role":"user","content":"Your previous judgement failed validation: "+str(exc)[:300]+
+                     ". Repair only schema or internal inconsistency. Claim status is based on actual retrieved evidence; "
+                     "correctness is based on the question and reference. A supported but irrelevant fact can still be an incorrect answer. "
+                     "Do not invent citations or change scores merely to pass validation."}]
+                row["judge"]["messages"]=messages
         try:
             raw=llm.chat(messages)
             row["judge"]["raw_output"]=raw
