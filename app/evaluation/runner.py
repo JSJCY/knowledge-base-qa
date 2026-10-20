@@ -128,7 +128,7 @@ def run(args):
         commit = subprocess.check_output(["git","-c",f"safe.directory={Path.cwd().as_posix()}","rev-parse","HEAD"],text=True,stderr=subprocess.DEVNULL).strip()
     except (subprocess.CalledProcessError,FileNotFoundError):
         commit = "unknown"
-    metadata = dict(schema_version=1, created_at=datetime.now(UTC).isoformat(),commit=commit,task=args.task,
+    metadata = dict(application_version=settings.version,schema_version=1, created_at=datetime.now(UTC).isoformat(),commit=commit,task=args.task,
                     embedding=args.embedding,embedding_model=settings.embedding_model if args.embedding=="real" else "hash-fixture",
                     llm=args.llm if args.task!="retrieval" else "none", model=settings.deepseek_model if args.llm=="real" else "mock",
                     corpus_sha256=digest(args.data/"corpus.jsonl"),cases_sha256=digest(args.data/"cases.jsonl"),

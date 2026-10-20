@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "知识库问答系统"
-    version: str = "1.1.0"
+    version: str = "1.2.0"
     debug: bool = False
     api_key: str = ""
     rate_limit_per_minute: int = 120
@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     rag_candidate_multiplier: int = 3
     rag_vector_weight: float = 0.7
     rag_keyword_weight: float = 0.3
-    rag_keyword_idf_enabled: bool = False
+    rag_keyword_idf_enabled: bool = True
     rag_query_rewrite_enabled: bool = False
     rag_grounded_output_enabled: bool = True
     rag_verify_claims_enabled: bool = True
