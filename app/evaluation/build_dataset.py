@@ -69,7 +69,7 @@ def build(xquad: Path, hotpot: Path, output: Path):
             case["document_ids"] = xquad_ids
     output.mkdir(parents=True, exist_ok=True)
     for name, values in [("corpus.jsonl", list(docs.values())), ("cases.jsonl", cases)]:
-        (output / name).write_text("".join(json.dumps(x,ensure_ascii=False,sort_keys=True)+"\n" for x in values),encoding="utf-8")
+        (output / name).write_text("".join(json.dumps(x,ensure_ascii=False,sort_keys=True)+"\n" for x in values),encoding="utf-8",newline="\n")
     manifest = dict(schema_version=1, dataset_version="1.0.0", seed=SEED, count=len(cases),
                     sources=[dict(name="XQuAD zh", url="https://raw.githubusercontent.com/google-deepmind/xquad/master/xquad.zh.json",
                                   sha256=digest(xquad), license="CC-BY-SA-4.0"),
@@ -77,7 +77,7 @@ def build(xquad: Path, hotpot: Path, output: Path):
                                   sha256=digest(hotpot), license="CC-BY-SA-4.0",
                                   kaggle="https://www.kaggle.com/datasets/jeromeblanchet/hotpotqa-question-answering-dataset")],
                     files={name:digest(output/name) for name in ["corpus.jsonl","cases.jsonl","project_cases.source.json"]})
-    (output/"manifest.json").write_text(json.dumps(manifest,indent=2)+"\n",encoding="utf-8")
+    (output/"manifest.json").write_text(json.dumps(manifest,indent=2)+"\n",encoding="utf-8",newline="\n")
     load_dataset(output)
     print(f"Validated {len(cases)} cases and {len(docs)} documents")
 
