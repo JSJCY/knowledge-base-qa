@@ -88,6 +88,9 @@ def judge_run(args):
     args.output.mkdir(parents=True,exist_ok=False)
     llm=DeepSeekLLMService(api_key=settings.deepseek_api_key,base_url=settings.deepseek_base_url,
                           model=args.model or settings.deepseek_model,timeout=settings.llm_timeout_seconds,temperature=0)
+    if args.retry_errors and (metadata.get("judge_model")!=llm.model or
+            metadata.get("judge_rubric_sha256")!=hashlib.sha256(RUBRIC.encode()).hexdigest()):
+        raise ValueError("Cannot reuse judgements from a different scoring protocol")
     metadata.update(judge_model=llm.model,judge_temperature=0,
                     judge_rubric_sha256=hashlib.sha256(RUBRIC.encode()).hexdigest(),
                     metrics_sha256=hashlib.sha256(__import__("inspect").getsource(score).encode()).hexdigest(),
@@ -95,11 +98,16 @@ def judge_run(args):
                     judgement_boundary="Model-assisted, same-provider unless configured otherwise; pending human calibration")
     (args.output/"metadata.json").write_text(json.dumps(metadata,indent=2)+"\n",encoding="utf-8")
     def one(row):
+        if args.retry_errors and row["status"]=="ok" and "judge" in row:
+            return row
+        if args.retry_errors and row["status"]=="judge_error":
+            row["status"]="ok"
         if row["status"]!="ok":
             return row
         payload={k:row[k] for k in ["case","answer","retrieved","citations"]}
         messages=[{"role":"system","content":RUBRIC},{"role":"user","content":json.dumps(payload,ensure_ascii=False)}]
-        row["judge"]={"messages":messages}
+        previous=row.get("judge")
+        row["judge"]={"messages":messages,"previous_attempt":previous}
         try:
             raw=llm.chat(messages)
             row["judge"]["raw_output"]=raw

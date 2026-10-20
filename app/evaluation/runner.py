@@ -21,8 +21,8 @@ from app.evaluation.metrics import score
 from app.models.chat import Conversation, Message
 from app.models.document import Chunk, Document
 from app.services.chunking import split_text
-from app.services.grounding import INSTRUCTIONS, check_claims
 from app.services.embedding import EmbeddingService, vec_to_bytes
+from app.services.grounding import INSTRUCTIONS, check_claims
 from app.services.llm import MockLLMService, get_llm_service
 from app.services.rag import (
     SYSTEM_PROMPT_TEMPLATE,
@@ -276,6 +276,7 @@ def main():
     judge_parser.add_argument("input",type=Path)
     judge_parser.add_argument("--output",type=Path,required=True)
     judge_parser.add_argument("--model")
+    judge_parser.add_argument("--retry-errors",action="store_true")
     judge_parser.add_argument("--workers",type=int,default=4)
     args=parser.parse_args()
     if args.command=="judge":

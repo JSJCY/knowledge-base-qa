@@ -99,8 +99,16 @@ def generate_grounded(llm: LLMService, messages, sources, *, verify=True) -> Gro
         quality["behavior"]=parsed.behavior
         checks=check_claims(llm,parsed.claims,messages[-1]["content"]) if verify and parsed.claims else []
         quality["assessments"]=checks
-        if any(not c["supported"] for c in checks):
-            raise ValueError("Claim contradicted or unsupported by cited quotes")
+        rejected=[c["index"] for c in checks if not c["supported"]]
+        if rejected:
+            quality["rejected_claims"]=[parsed.claims[i].model_dump() for i in rejected]
+            parsed.claims=[claim for i,claim in enumerate(parsed.claims) if i not in rejected]
+            if not parsed.claims:
+                raise ValueError("Claim contradicted or unsupported by cited quotes")
+            parsed.behavior="partial"
+            parsed.message="部分陈述缺少支持证据。"
+        quality["displayed_claims"]=[c.model_dump() for c in parsed.claims]
+        quality["behavior"]=parsed.behavior
         used=sorted({e.source_id for c in parsed.claims for e in c.evidence})
         citations=[sources[i-1] for i in used]
         for i,source in zip(used,citations,strict=True):
@@ -110,7 +118,7 @@ def generate_grounded(llm: LLMService, messages, sources, *, verify=True) -> Gro
         if parsed.message and parsed.behavior!="answer":
             lines.append({"partial":"其余部分在当前资料中未找到足够信息。",
                           "refuse":REFUSAL,"clarify":"请明确您指的是哪个对象、版本或具体问题。"}[parsed.behavior])
-        quality["status"]="model_verified" if checks else ("format_validated" if parsed.claims else "not_applicable")
+        quality["status"]=("partially_verified" if rejected else "model_verified") if checks else ("format_validated" if parsed.claims else "not_applicable")
         return GroundedAnswer("\n\n".join(lines),citations,quality)
     except (ValueError,KeyError,TypeError) as exc:
         quality.update(status="rejected",behavior="refuse",reason=str(exc)[:300])

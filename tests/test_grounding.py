@@ -59,3 +59,14 @@ def test_refusal_has_no_claims_and_no_faithfulness_score():
                              messages(),[source()])
     assert output.quality["status"]=="not_applicable"
     assert output.citations==[]
+
+def test_supported_part_is_kept_when_other_claim_fails():
+    raw=json.loads(answer())
+    raw["claims"].append({"text":"Uses Java.","evidence":[{"source_id":1,"quote":"FastAPI uses Python."}]})
+    checks={"assessments":[{"index":0,"supported":True,"reason":"Python is explicit"},
+                            {"index":1,"supported":False,"reason":"Java contradicts Python"}]}
+    output=generate_grounded(Replies(json.dumps(raw),json.dumps(checks)),messages(),[source()])
+    assert output.quality["status"]=="partially_verified"
+    assert "Python" in output.answer
+    assert "Java" not in output.answer
+    assert output.quality["behavior"]=="partial"
