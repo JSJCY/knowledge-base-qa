@@ -62,6 +62,7 @@ def chat(
             candidate_multiplier=settings.rag_candidate_multiplier,
             vector_weight=settings.rag_vector_weight,
             keyword_weight=settings.rag_keyword_weight,
+            keyword_idf=settings.rag_keyword_idf_enabled,
             min_relevance_score=settings.rag_min_relevance_score,
             owner_id=user.id if user else None,
         )
@@ -107,6 +108,7 @@ def chat_stream(
                 candidate_multiplier=settings.rag_candidate_multiplier,
                 vector_weight=settings.rag_vector_weight,
                 keyword_weight=settings.rag_keyword_weight,
+                keyword_idf=settings.rag_keyword_idf_enabled,
                 min_relevance_score=settings.rag_min_relevance_score,
                 owner_id=user.id if user else None,
             ):

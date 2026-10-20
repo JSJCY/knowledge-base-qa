@@ -74,7 +74,7 @@ def check_claims(llm, claims, question):
     raw=llm.chat(messages)
     data=parse_object(raw)
     checks=data["assessments"]
-    if len(checks)!=len(claims) or {x["index"] for x in checks} != set(range(len(claims))):
+    if any(type(x.get("index")) is not int for x in checks) or len(checks)!=len(claims) or {x["index"] for x in checks} != set(range(len(claims))):
         raise ValueError("Incomplete claim verification")
     if any(type(x.get("supported")) is not bool or not isinstance(x.get("reason"),str)
            or not x["reason"].strip() for x in checks):

@@ -114,6 +114,7 @@ def prepare_question(
     vector_weight: float = 0.7,
     keyword_weight: float = 0.3,
     owner_id: int | None = None,
+    keyword_idf: bool = False,
 ) -> QAPreparation:
     if conversation_id is not None:
         conversation = db.get(Conversation, conversation_id)
@@ -143,6 +144,7 @@ def prepare_question(
         vector_weight=vector_weight,
         keyword_weight=keyword_weight,
         owner_id=owner_id,
+        keyword_idf=keyword_idf,
     )
     system_content = SYSTEM_PROMPT_TEMPLATE.format(context=build_context(results))
     if summary:
@@ -222,6 +224,7 @@ def answer_question(
     keyword_weight: float = 0.3,
     min_relevance_score: float = 0.15,
     owner_id: int | None = None,
+    keyword_idf: bool = False,
 ) -> QAResult:
     """执行一次 RAG 问答并把问答对写入会话。"""
     preparation = prepare_question(
@@ -238,6 +241,7 @@ def answer_question(
         vector_weight=vector_weight,
         keyword_weight=keyword_weight,
         owner_id=owner_id,
+        keyword_idf=keyword_idf,
     )
     answer = complete_preparation(preparation,llm,min_relevance_score)
     persist_answer(db, preparation, question, answer)
@@ -252,7 +256,7 @@ def stream_answer_question(
         db,
         embedder,
         **{
-            key: kwargs[key]
+            key: kwargs.get(key, False) if key == "keyword_idf" else kwargs[key]
             for key in (
                 "question",
                 "top_k",
@@ -264,6 +268,7 @@ def stream_answer_question(
                 "vector_weight",
                 "keyword_weight",
                 "owner_id",
+                "keyword_idf",
             )
         },
         llm=llm,

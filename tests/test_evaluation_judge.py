@@ -32,3 +32,11 @@ def test_judge_tracks_supported_claims_and_missing_citations_separately():
     assert scores["faithfulness"]==1
     assert scores["citation_coverage"]==0
     assert scores["citation_support"] is None
+
+def test_judge_normalizes_source_labels_without_loosening_validation():
+    v=verdict(claims=[{"text":"Python","status":"supported","cited_source_ids":["S1"],
+                       "citation_supported":True,"reason":"quoted"}])
+    assert apply_verdict(row(),v)["citation_support"]==1
+    with pytest.raises(ValueError):
+        verdict(claims=[{"text":"Python","status":"supported","cited_source_ids":["invented"],
+                        "citation_supported":True,"reason":"x"}])

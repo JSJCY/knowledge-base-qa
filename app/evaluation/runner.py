@@ -136,7 +136,7 @@ def run(args):
                     settings={name:getattr(settings,name) for name in ["chunk_size","chunk_overlap","llm_temperature",
                               "rag_min_relevance_score","rag_vector_weight","rag_keyword_weight","rag_candidate_multiplier",
                               "rag_history_limit","rag_history_char_budget","rag_query_rewrite_enabled",
-                              "rag_grounded_output_enabled","rag_verify_claims_enabled"]},
+                              "rag_grounded_output_enabled","rag_verify_claims_enabled","rag_keyword_idf_enabled"]},
                     top_k=args.top_k,split=args.split,workers=args.workers,
                     grounding_prompt_sha256=hashlib.sha256(INSTRUCTIONS.encode()).hexdigest(),
                     verifier_sha256=hashlib.sha256(__import__("inspect").getsource(check_claims).encode()).hexdigest(),
@@ -177,7 +177,8 @@ def run(args):
                           history_limit=settings.rag_history_limit,history_char_budget=settings.rag_history_char_budget,
                           query_rewrite_enabled=settings.rag_query_rewrite_enabled,
                           candidate_multiplier=settings.rag_candidate_multiplier,
-                          vector_weight=settings.rag_vector_weight,keyword_weight=settings.rag_keyword_weight)
+                          vector_weight=settings.rag_vector_weight,keyword_weight=settings.rag_keyword_weight,
+                          keyword_idf=settings.rag_keyword_idf_enabled)
             preparation = prepare_question(db,LockedEmbedding(),llm=trace,**kwargs)
             retrieved = list(preparation.citations)
             row["retrieval_query"] = getattr(preparation,"retrieval_query",case.question)

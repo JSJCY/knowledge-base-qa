@@ -4,7 +4,7 @@ import json
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.config import get_settings
 from app.evaluation.dataset import Case
@@ -39,9 +39,16 @@ class ClaimVerdict(BaseModel):
     citation_supported: bool
     reason: str = Field(min_length=1)
 
+    @field_validator("cited_source_ids",mode="before")
+    @classmethod
+    def normalize_source_ids(cls, value):
+        if isinstance(value,list):
+            return [int(item[1:]) if isinstance(item,str) and re.fullmatch(r"S[1-9][0-9]*",item) else item for item in value]
+        return value
+
 
 class Verdict(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="ignore", strict=True)
     correctness: int = Field(ge=0,le=2)
     completeness: int = Field(ge=0,le=2)
     behavior_match: bool
@@ -99,6 +106,7 @@ def judge_run(args):
     (args.output/"metadata.json").write_text(json.dumps(metadata,indent=2)+"\n",encoding="utf-8")
     def one(row):
         if args.retry_errors and row["status"]=="ok" and "judge" in row:
+            row["scores"]=apply_verdict(row,Verdict.model_validate(row["judge"]["verdict"]))
             return row
         if args.retry_errors and row["status"]=="judge_error":
             row["status"]="ok"
@@ -108,10 +116,23 @@ def judge_run(args):
         messages=[{"role":"system","content":RUBRIC},{"role":"user","content":json.dumps(payload,ensure_ascii=False)}]
         previous=row.get("judge")
         row["judge"]={"messages":messages,"previous_attempt":previous}
+        if args.retry_errors and previous and previous.get("raw_output"):
+            try:
+                parsed=parse_object(previous["raw_output"])
+                verdict=Verdict.model_validate(parsed)
+                row["scores"]=apply_verdict(row,verdict)
+                row["judge"].update(raw_output=previous["raw_output"],verdict=verdict.model_dump(),
+                    reparsed_without_new_model_call=True,
+                    ignored_top_level_fields=sorted(set(parsed)-Verdict.model_fields.keys()))
+                return row
+            except (ValueError,KeyError,TypeError):
+                pass
         try:
             raw=llm.chat(messages)
             row["judge"]["raw_output"]=raw
-            verdict=Verdict.model_validate(parse_object(raw))
+            parsed=parse_object(raw)
+            verdict=Verdict.model_validate(parsed)
+            row["judge"]["ignored_top_level_fields"]=sorted(set(parsed)-Verdict.model_fields.keys())
             row["scores"]=apply_verdict(row,verdict)
             row["judge"]["verdict"]=verdict.model_dump()
         except Exception as exc:

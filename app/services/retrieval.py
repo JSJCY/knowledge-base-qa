@@ -3,7 +3,9 @@
 小规模知识库（数千块以内）性能足够；更大规模可替换为专用向量库。
 """
 
+import math
 import re
+from collections import Counter
 from dataclasses import dataclass
 
 import numpy as np
@@ -49,6 +51,7 @@ def search_chunks(
     vector_weight: float = 0.7,
     keyword_weight: float = 0.3,
     owner_id: int | None = None,
+    keyword_idf: bool = False,
 ) -> list[RetrievedChunk]:
     """混合召回并重排序：向量语义 + 关键词命中（跳过未向量化切块）。"""
     stmt = (
@@ -70,6 +73,13 @@ def search_chunks(
     keyword_scores = np.asarray(
         [keyword_score(query_tokens, chunk.content) for chunk, _ in rows], dtype=np.float32
     )
+    if keyword_idf and query_tokens:
+        term_sets=[tokenize(chunk.content) for chunk,_ in rows]
+        frequencies=Counter(term for terms in term_sets for term in terms)
+        weights={term:math.log(1+len(rows)/(1+frequencies[term])) for term in query_tokens}
+        denominator=sum(weights.values())
+        keyword_scores=np.asarray([sum(weights[t] for t in query_tokens & terms)/denominator
+                                   for terms in term_sets],dtype=np.float32)
     candidate_count = min(len(rows), max(top_k, top_k * candidate_multiplier))
     vector_order = np.argsort(vector_scores)[::-1][:candidate_count]
     keyword_order = np.argsort(keyword_scores)[::-1][:candidate_count]

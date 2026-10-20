@@ -32,6 +32,7 @@ def search(
         top_k=request.top_k,
         document_id=request.document_id,
         keyword_query=request.query,
+        keyword_idf=get_settings().rag_keyword_idf_enabled,
         owner_id=user.id if user else None,
         candidate_multiplier=get_settings().rag_candidate_multiplier,
         vector_weight=get_settings().rag_vector_weight,
