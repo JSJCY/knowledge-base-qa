@@ -448,7 +448,7 @@ function appendMessage(role, content, citations, messageId, feedback) {
         citationStore.set(citationId, c);
         html +=
           '<details class="cite"><summary>' +
-          '<span class="cite-file">' + escapeHtml(c.document_filename) + "</span>" +
+          '<span class="cite-file">' + (c.source_id ? '[S' + c.source_id + '] ' : '') + escapeHtml(c.document_filename) + "</span>" +
           '<span class="cite-idx">#块 ' + c.chunk_index + "</span>" +
           '<span class="cite-score">' + (c.score != null ? c.score.toFixed(3) : "") + "</span>" +
           "</summary>" +

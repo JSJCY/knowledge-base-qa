@@ -80,6 +80,7 @@ def chat(
     return ChatResponse(
         conversation_id=result.conversation.id,
         answer=result.answer,
+        quality=result.quality,
         citations=citations,
         llm_mode=getattr(llm, "mode", "unknown"),
     )
@@ -114,7 +115,8 @@ def chat_stream(
             assert preparation is not None
             payload = {"conversation_id": preparation.conversation.id,
                        "citations": rag_service.citation_dicts(preparation.citations),
-                       "llm_mode": getattr(llm, "mode", "unknown")}
+                       "llm_mode": getattr(llm, "mode", "unknown"),
+                       "quality":preparation.quality}
             yield f"event: done\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
         except ConversationNotFoundError as exc:
             db.rollback()

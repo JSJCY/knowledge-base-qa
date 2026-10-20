@@ -1,6 +1,7 @@
 """测试专用的确定性假实现（不下载真实模型）。"""
 
 import hashlib
+import json
 import re
 
 import numpy as np
@@ -38,8 +39,15 @@ class FakeLLMService:
         self.last_messages: list[dict[str, str]] | None = None
 
     def chat(self, messages: list[dict[str, str]]) -> str:
+        if messages[0]["content"].startswith("核验"):
+            payload=json.loads(messages[-1]["content"])
+            return json.dumps({"assessments":[{"index":c["index"],"supported":True,"reason":"fixture"} for c in payload["claims"]]})
         self.last_messages = list(messages)
         last_user = next(
             (m["content"] for m in reversed(messages) if m["role"] == "user"), ""
         )
+        matches=re.findall(r'<untrusted_document id="(\d+)"[^>]*>\n(.*?)\n</untrusted_document>',messages[0]["content"],re.S)
+        if matches:
+            source_id,text=matches[0]
+            return json.dumps({"behavior":"answer","claims":[{"text":text,"evidence":[{"source_id":int(source_id),"quote":text}]}]},ensure_ascii=False)
         return f"fake-answer::{last_user[:30]}"

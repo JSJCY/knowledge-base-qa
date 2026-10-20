@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     rag_vector_weight: float = 0.7
     rag_keyword_weight: float = 0.3
     rag_query_rewrite_enabled: bool = False
+    rag_grounded_output_enabled: bool = True
+    rag_verify_claims_enabled: bool = True
 
     @property
     def llm_enabled(self) -> bool:

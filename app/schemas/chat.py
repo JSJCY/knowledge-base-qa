@@ -16,6 +16,10 @@ class ChatRequest(BaseModel):
 
 
 class CitationOut(BaseModel):
+    source_id: int | None = None
+    chunk_id: int | None = None
+    content_sha256: str | None = None
+    document_version: int | None = None
     document_id: int
     document_filename: str
     chunk_index: int
@@ -27,6 +31,7 @@ class ChatResponse(BaseModel):
     conversation_id: int
     answer: str
     citations: list[CitationOut]
+    quality: dict | None = None
     llm_mode: str = Field(description="deepseek=真实模型 / mock=未配置 Key / fake=测试")
 
 
@@ -37,6 +42,7 @@ class MessageOut(BaseModel):
     role: str
     content: str
     citations: list[CitationOut] = []
+    quality: dict | None = None
     feedback: str | None = None
 
     @field_validator("citations", mode="before")

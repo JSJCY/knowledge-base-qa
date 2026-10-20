@@ -19,6 +19,7 @@ class RetrievedChunk:
     chunk: Chunk
     document: Document
     score: float
+    source_id: int | None = None
 
 
 _TOKEN_PATTERN = re.compile(r"[a-zA-Z0-9_]+|[\u4e00-\u9fff]")
