@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/JSJCY/knowledge-base-qa)](https://github.com/JSJCY/knowledge-base-qa/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
-基于 **FastAPI + 本地向量检索（RAG）+ DeepSeek** 的知识库问答系统：
+基于 **FastAPI + 本地混合检索（RAG）+ DeepSeek** 的知识库问答系统：
 
 > 上传文档（.txt / .md / .pdf）→ 自动解析切块 → **本地向量化**（BGE 中文模型，免费离线）→ 提问时检索最相关内容 → **DeepSeek 生成带引用来源的回答**，支持多轮会话上下文。
 
@@ -19,8 +19,8 @@
 - 📄 **文档管理**：上传 / 列表 / 详情 / 切块查看 / 删除；支持 TXT、Markdown、PDF，兼容 UTF-8 与 GB18030 中文编码
 - 🧩 **智能切块**：段落感知打包 + 超长段落窗口硬切 + 块间重叠，兼顾语义完整与检索粒度
 - 🧠 **本地向量化**：fastembed + `BAAI/bge-small-zh-v1.5`（ONNX 本地推理，无需付费 embedding API，模型仅首次下载）
-- 🔍 **混合检索**：融合向量语义与关键词命中，候选集重排序，降低专有名词漏召回；支持全库检索或限定单文档
-- 💬 **RAG 问答**：支持低相关拒答、上下文压缩与可选查询改写；回答自动附带引用来源（文档名 / 段落号 / 相似度）
+- 🔍 **混合检索**：融合向量语义与关键词匹配（默认启用 IDF 加权），按配置权重融合排序，降低专有名词漏召回；支持全库检索或限定单文档
+- 💬 **RAG 问答**：支持低相关拒答、上下文压缩与可选查询改写；回答自动附带引用来源（文档名 / 段落号 / 综合相关性分数）
 - 🗂 **多轮会话**：会话与消息持久化（SQLite），自动生成会话标题，追问自动携带上下文
 - 🖥 **Web 界面**：内置零依赖单页前端，支持流式回答、Markdown（表格 / 公式 / 代码块高亮与复制）、引用来源定位、文档拖拽上传与会话切换
 - ⚙️ **工程化运行**：文档可异步入队处理并查询进度；统一错误格式、请求 ID、可选 API Key 与限流；提供 Docker Compose + Nginx 部署配置
@@ -36,7 +36,7 @@
 解析文本(pypdf/编码探测)    问题向量化(BGE)
    │                          │
    ▼                          ▼
-段落感知切块 ──► 向量化     余弦相似度检索 Top-K
+段落感知切块 ──► 向量化     语义与关键词混合检索 Top-K
    │                          │
    ▼                          ▼
 SQLite(chunks+embedding)   组装 Prompt(资料+会话历史)
@@ -74,7 +74,7 @@ DEEPSEEK_API_KEY=sk-xxxxxxxx
 HF_ENDPOINT=https://hf-mirror.com
 ```
 
-> 不填 Key 也能启动：问答接口自动进入 **Mock 模式**（返回占位回答），文档上传、切块、向量检索功能不受影响。
+> 不填 Key 也能启动：问答接口自动进入 **Mock 模式**（返回占位回答），文档上传、切块、混合检索功能不受影响。
 
 ### 3. 启动
 
@@ -123,7 +123,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 | GET | `/api/v1/documents/{id}/chunks` | 文档切块列表 |
 | POST | `/api/v1/documents/{id}/reindex` | 重新向量化文档 |
 | DELETE | `/api/v1/documents/{id}` | 删除文档及其切块 |
-| POST | `/api/v1/search` | 向量检索（余弦相似度排序） |
+| POST | `/api/v1/search` | 混合检索（向量语义与关键词加权融合排序） |
 | POST | `/api/v1/chat` | 知识库问答（RAG，带引用来源，支持多轮会话） |
 | GET | `/api/v1/conversations` | 会话列表 |
 | GET | `/api/v1/conversations/{id}` | 会话详情（含消息与引用） |
@@ -165,7 +165,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 │   ├── api/routes/            # 路由层
 │   │   ├── health.py          # 健康检查与服务信息
 │   │   ├── documents.py       # 文档上传 / 管理 / 重建索引
-│   │   ├── search.py          # 向量检索
+│   │   ├── search.py          # 混合检索接口
 │   │   └── chat.py            # RAG 问答与会话
 │   ├── models/                # ORM：文档 / 切块(含向量) / 会话 / 消息
 │   ├── schemas/               # Pydantic 请求响应模型
@@ -173,7 +173,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 │       ├── parsing.py         # txt/md/pdf → 文本（编码探测）
 │       ├── chunking.py        # 段落感知切块 + 重叠
 │       ├── embedding.py       # fastembed 向量化（懒加载、归一化）
-│       ├── retrieval.py       # 余弦相似度 Top-K 检索
+│       ├── retrieval.py       # 向量与关键词混合检索 Top-K
 │       ├── llm.py             # DeepSeek 客户端 + Mock 降级
 │       ├── rag.py             # 检索→Prompt→LLM→会话持久化编排
 │       ├── documents.py       # 文档服务
@@ -205,7 +205,7 @@ ruff check .            # 代码规范
 
 **数据存在哪里？** `kb.db`（SQLite：文档元数据、切块、向量、会话）与 `data/uploads/`（原始文件）。删除即重置，均不入库 Git。
 
-**知识库能放多少文档？** 检索为内存暴力余弦相似度，数千切块内毫秒级响应；更大规模可替换 `retrieval.py` 为专用向量库（接口已隔离）。
+**知识库能放多少文档？** 当前从 SQLite 读取范围内的切块，在内存中计算向量余弦相似度和关键词分数，再加权融合取 Top-K。容量与响应时间取决于切块数量和运行环境，需要实测；更大规模可替换 `retrieval.py` 的检索实现。
 
 **能换别的大模型吗？** 可以。`DEEPSEEK_BASE_URL` 指向任何 OpenAI 兼容接口（通义、Kimi、Moonshot、本地 vLLM 等），或在 `llm.py` 实现新的 `LLMService`。
 

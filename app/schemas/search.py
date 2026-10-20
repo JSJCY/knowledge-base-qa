@@ -15,7 +15,7 @@ class SearchResultOut(BaseModel):
     document_filename: str
     chunk_index: int
     content: str
-    score: float = Field(description="余弦相似度，越大越相关")
+    score: float = Field(description="向量语义与关键词匹配加权融合的综合相关性分数，越大越相关")
 
 
 class SearchResponse(BaseModel):

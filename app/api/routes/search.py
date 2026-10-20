@@ -1,4 +1,4 @@
-"""检索路由：向量相似度搜索。"""
+"""检索路由：向量语义与关键词匹配的混合检索。"""
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -14,7 +14,7 @@ from app.services.retrieval import search_chunks
 router = APIRouter(prefix="/api/v1", tags=["检索与问答"])
 
 
-@router.post("/search", response_model=SearchResponse, summary="向量检索")
+@router.post("/search", response_model=SearchResponse, summary="混合检索")
 def search(
     request: SearchRequest,
     db: Session = Depends(get_db),
